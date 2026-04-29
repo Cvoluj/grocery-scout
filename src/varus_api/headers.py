@@ -1,0 +1,33 @@
+MULTISEARCH_HEADERS = {
+    'accept': '*/*',
+    'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7,uk;q=0.6',
+    'cache-control': 'no-cache',
+    'origin': 'https://varus.ua',
+    'pragma': 'no-cache',
+    'priority': 'u=1, i',
+    'referer': 'https://varus.ua/',
+    'sec-ch-ua': '"Google Chrome";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'cross-site',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
+}
+
+REGULAR_HEADERS = {
+    'accept': 'application/json',
+    "accept-language": "uk",
+    'cache-control': 'no-cache',
+    'content-type': 'application/json',
+    'pragma': 'no-cache',
+    'priority': 'u=1, i',
+    'referer': 'https://varus.ua',
+    'sec-ch-ua': '"Google Chrome";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
+}
