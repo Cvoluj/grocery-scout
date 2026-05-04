@@ -1,9 +1,11 @@
 
 
+from dataclasses import asdict
 import json
 
 from curl_cffi import AsyncSession, Response
 
+from src.settings import VARUS_SHOPS_CACHE
 from src.models.products import VarusProduct
 from src.models.shops import VarusShop
 from src.varus_api.headers import MULTISEARCH_HEADERS, REGULAR_HEADERS
@@ -49,6 +51,10 @@ class VarusClient:
     async def get_stores(self):
         if not self.stores:
             self.stores = await self._fetch_stores()
+            VARUS_SHOPS_CACHE.write_text(
+                json.dumps([asdict(s) for s in self.stores], indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
         return self.stores
     
     async def search_product_ids(self, shop: VarusShop, query: str) -> list[str]:
@@ -104,7 +110,6 @@ class VarusClient:
             headers=REGULAR_HEADERS,
         )
         data = response.json()
-        print(data)
 
         products = []
         for item in data["hits"]:
@@ -143,7 +148,7 @@ if __name__ == '__main__':
         print(shop)
         print(f"Шукаємо в: {shop.short_name} ({shop.address})")
 
-        query = "Чіпси Люкс сир"
+        query = "Молоко Яготинське"
         products = await client.search_in_shop(shop, query)
         print(f"\nРезультати для '{query}' ({len(products)} товарів):")
         for product in products:

@@ -1,40 +1,141 @@
-cookies = {
-    'lang': 'uk',
-    '_sessionfront': 'anfkk3b7hsvjupfpc17clpvgv0',
-    'LAST_CITY_SEGMENT_NAME': '9d3b0477b7995af0053a6548709f373f41f5d3a89af8fc24ef8d8f51562924bba%3A2%3A%7Bi%3A0%3Bs%3A22%3A%22LAST_CITY_SEGMENT_NAME%22%3Bi%3A1%3BN%3B%7D',
-    '_csrf-shop': '1f01232322facc8bb931531ed5149ce15cadb573c5da9196c24867556e492199a%3A2%3A%7Bi%3A0%3Bs%3A10%3A%22_csrf-shop%22%3Bi%3A1%3Bs%3A32%3A%22FLChIYA9B3A_TmeMsdarUig984OdVNE4%22%3B%7D',
-    '__cf_bm': 'Kn9vbVHYqSbkuzwyf5c4Uj0ij4zZkefoNzYMyZ1jIM0-1777493114-1.0.1.1-Vc3pcIU3jZMuWH6zRucgs_FIvv0gagNceWRWfvV9lnbV.Exvx.11XHx.LqDg4p00HU6lyUQGMX_5DPvybCz45Rm9gtU5g3B8ELIaa0viRUI',
-    '_gcl_au': '1.1.1636613378.1777493116',
-    '_fbp': 'fb.1.1777493116034.212893880893238017',
-    '_hjSession_1764046': 'eyJpZCI6ImNhZGI4M2Q4LWUzNDUtNDI2YS1iNWI0LTYyM2UyY2IyZTNhOSIsImMiOjE3Nzc0OTMxMTYxMDUsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjoxLCJzcCI6MX0=',
-    '_gid': 'GA1.2.1851831876.1777493116',
-    '_gat_gtag_UA_162822870_1': '1',
-    '_ms': '7b96c982-97b7-47ec-9aca-095be7046381',
-    'sc': '99F92869-967C-30E5-0731-70A5A776035A',
-    'cf_clearance': 'AvZ_sTmPT8UOGt3BFElL_.RgtwkwN24EVftkPabJKR4-1777493115-1.2.1.1-7xv1eix1oJ1uzgk1vVny8PvkThviz_m0eDpw9eGMp_K4WD2SKYoVVHM6z6e69xsaQftMen4ALMHCaXdeo3kFta032gbk_lFKRobAjaJUwayuJtHMvEFR.QkVrQ5xFRpPKoxX.ZVOMnLrLGK3FdhUXgQMb0flHPDleixmS_05_PYcnES3dUxDbDvvMkrWnTNLk3r5A0wRxHLqlmID1tIhHQPt64Ag3S9KIE8mB7uTyrohZl1kKxNYh.3KwqI7eb.d_pZsZ4G8lamGeUvU4wF5caE9ts_2ZufBN8c4hNjsiU1yZETGIVjyZtAmY9quddcg.QWSAWe4ivVbgwhVFgbbUA',
-    'banner': '1577%2C1603',
-    '_ga': 'GA1.1.646423219.1777493116',
-    '_hjSessionUser_1764046': 'eyJpZCI6ImUzNTA0MTU1LTI2NjQtNTVmOC04YWEzLTc2MWM3M2Y3NjMzNCIsImNyZWF0ZWQiOjE3Nzc0OTMxMTYxMDQsImV4aXN0aW5nIjp0cnVlfQ==',
-    '_ga_6MXFKBMVX6': 'GS2.1.s1777493116$o1$g1$t1777493119$j57$l0$h0',
-}
+from dataclasses import asdict
+import json
+import re
+import time
+import uuid
+import random
 
-headers = {
-    'accept': '*/*',
-    'accept-language': 'ru-RU,ru;q=0.9',
-    'cache-control': 'no-cache',
-    'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    'origin': 'https://www.atbmarket.com',
-    'pragma': 'no-cache',
-    'priority': 'u=1, i',
-    'referer': 'https://www.atbmarket.com/',
-    'sec-ch-ua': '"Google Chrome";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-platform': '"Windows"',
-    'sec-fetch-dest': 'empty',
-    'sec-fetch-mode': 'cors',
-    'sec-fetch-site': 'same-origin',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
-    'x-csrf-token': 'HC54cOC562OgqXhYkEPQKn2a8RD3EBpbJbsqVbNJMfRaYjsYqeCqWuKaOQfELrVnDv6QYqJ5fWIdj2Ux5Qd0wA==',
-    'x-requested-with': 'XMLHttpRequest',
-    # 'cookie': 'lang=uk; _sessionfront=anfkk3b7hsvjupfpc17clpvgv0; LAST_CITY_SEGMENT_NAME=9d3b0477b7995af0053a6548709f373f41f5d3a89af8fc24ef8d8f51562924bba%3A2%3A%7Bi%3A0%3Bs%3A22%3A%22LAST_CITY_SEGMENT_NAME%22%3Bi%3A1%3BN%3B%7D; _csrf-shop=1f01232322facc8bb931531ed5149ce15cadb573c5da9196c24867556e492199a%3A2%3A%7Bi%3A0%3Bs%3A10%3A%22_csrf-shop%22%3Bi%3A1%3Bs%3A32%3A%22FLChIYA9B3A_TmeMsdarUig984OdVNE4%22%3B%7D; __cf_bm=Kn9vbVHYqSbkuzwyf5c4Uj0ij4zZkefoNzYMyZ1jIM0-1777493114-1.0.1.1-Vc3pcIU3jZMuWH6zRucgs_FIvv0gagNceWRWfvV9lnbV.Exvx.11XHx.LqDg4p00HU6lyUQGMX_5DPvybCz45Rm9gtU5g3B8ELIaa0viRUI; _gcl_au=1.1.1636613378.1777493116; _fbp=fb.1.1777493116034.212893880893238017; _hjSession_1764046=eyJpZCI6ImNhZGI4M2Q4LWUzNDUtNDI2YS1iNWI0LTYyM2UyY2IyZTNhOSIsImMiOjE3Nzc0OTMxMTYxMDUsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjoxLCJzcCI6MX0=; _gid=GA1.2.1851831876.1777493116; _gat_gtag_UA_162822870_1=1; _ms=7b96c982-97b7-47ec-9aca-095be7046381; sc=99F92869-967C-30E5-0731-70A5A776035A; cf_clearance=AvZ_sTmPT8UOGt3BFElL_.RgtwkwN24EVftkPabJKR4-1777493115-1.2.1.1-7xv1eix1oJ1uzgk1vVny8PvkThviz_m0eDpw9eGMp_K4WD2SKYoVVHM6z6e69xsaQftMen4ALMHCaXdeo3kFta032gbk_lFKRobAjaJUwayuJtHMvEFR.QkVrQ5xFRpPKoxX.ZVOMnLrLGK3FdhUXgQMb0flHPDleixmS_05_PYcnES3dUxDbDvvMkrWnTNLk3r5A0wRxHLqlmID1tIhHQPt64Ag3S9KIE8mB7uTyrohZl1kKxNYh.3KwqI7eb.d_pZsZ4G8lamGeUvU4wF5caE9ts_2ZufBN8c4hNjsiU1yZETGIVjyZtAmY9quddcg.QWSAWe4ivVbgwhVFgbbUA; banner=1577%2C1603; _ga=GA1.1.646423219.1777493116; _hjSessionUser_1764046=eyJpZCI6ImUzNTA0MTU1LTI2NjQtNTVmOC04YWEzLTc2MWM3M2Y3NjMzNCIsImNyZWF0ZWQiOjE3Nzc0OTMxMTYxMDQsImV4aXN0aW5nIjp0cnVlfQ==; _ga_6MXFKBMVX6=GS2.1.s1777493116$o1$g1$t1777493119$j57$l0$h0',
-}
+from curl_cffi import AsyncSession, Response
+
+from src.atb_api.headers import GETSTORE_HEADERS, MULTISEARCH_HEADERS
+from src.models.products import ATBProduct
+from src.models.shops import ATBShop
+from src.settings import ATB_SHOPS_CACHE, BROWSER_TYPES_CYCLE
+
+_OPTION_RE = re.compile(
+    r"<option value='(\d+)' worktime='([^']+)' city='\d+'>([^<]+)</option>"
+)
+
+def _strip_prefix(address: str) -> str:
+    first, _, rest = address.partition(' ')
+    return rest.strip() if first.endswith('.') else address
+
+def _parse_shops(data: dict) -> list[ATBShop]:
+    coord_map = {
+        item["id"]: (float(item["lat"]), float(item["lng"]))
+        for item in data["coordinates"]
+    }
+    shops = []
+    for m in _OPTION_RE.finditer(data["optselect"]):
+        shop_id = int(m.group(1))
+        worktime = m.group(2)
+        address = m.group(3)
+        lat, lon = coord_map[shop_id]
+        shops.append(ATBShop(
+            id=shop_id,
+            short_name=_strip_prefix(address),
+            lat=lat,
+            lon=lon,
+            address=address,
+            worktime=worktime,
+        ))
+    return shops
+
+
+def _parse_product(item: dict) -> ATBProduct:
+    old_price = item.get("oldprice")
+    return ATBProduct(
+        id=item["id"],
+        name=item["name"],
+        price=old_price if old_price else item["price"],
+        in_stock=item["is_presence"],
+        url=item["url"],
+        image_url=item.get("picture"),
+        special_price=item["price"] if old_price else None,
+    )
+
+
+def _parse_products(data: dict) -> list[ATBProduct]:
+    products = []
+    for group in data["results"]["item_groups"]:
+        for item in group["items"]:
+            items = item if isinstance(item, list) else [item]
+            for subitem in items:
+                products.append(_parse_product(subitem))
+    return products
+
+
+def _gen_q() -> str:
+    return random.randint(0, 36**6).to_bytes(4, "big").hex()[:6]
+
+class ATBClient:
+    ATB_MULTISEARCH_ID = "11280"
+    ATB_API_KEY = "63a6d0a760fd2d0562c4061b78e64754"
+    ATB_CITY_ID = "395"
+
+
+    def __init__(self):
+        self.session = AsyncSession(impersonate=next(BROWSER_TYPES_CYCLE))
+        self.search_session = AsyncSession()
+        self.stores: list[ATBShop] = []
+        self.uid = str(uuid.uuid4())
+
+    async def _fetch_stores(self) -> list[ATBShop]:
+        response: Response = await self.session.post(
+            "https://www.atbmarket.com/site/getstore",
+            headers=GETSTORE_HEADERS,
+            cookies={"lang": "uk"},
+            data={"city": self.ATB_CITY_ID},
+        )
+        return _parse_shops(response.json())
+
+    async def get_stores(self) -> list[ATBShop]:
+        if not self.stores:
+            self.stores = await self._fetch_stores()
+            ATB_SHOPS_CACHE.write_text(
+                json.dumps([asdict(s) for s in self.stores], indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        return self.stores
+
+    async def search_in_shop(self, shop: ATBShop, query: str) -> list[ATBProduct]:
+        params = {
+            "id": self.ATB_MULTISEARCH_ID,
+            "key": self.ATB_API_KEY,
+            "lang": "uk",
+            "location": str(shop.id),
+            "m": str(int(time.time() * 1000)),
+            "q": _gen_q(),
+            "query": query,
+            "s": "small",
+            "uid": self.uid,
+        }
+        response: Response = await self.search_session.get(
+            "https://api.multisearch.io/",
+            params=params,
+            headers=MULTISEARCH_HEADERS,
+        )
+        data = response.json()
+        if not data.get("results", {}).get("item_groups"):
+            return []
+        return _parse_products(data)
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    async def main():
+        client = ATBClient()
+        shops = await client.get_stores()
+        print(f"Знайдено магазинів: {len(shops)}")
+
+        shop = shops[0]
+        print(f"Шукаємо в: {shop}")
+
+        query = "Молоко Яготинське"
+        products = await client.search_in_shop(shop, query)
+        print(f"\nРезультати для '{query}' ({len(products)} товарів):")
+        for product in products:
+            print(product)
+
+    asyncio.run(main())
