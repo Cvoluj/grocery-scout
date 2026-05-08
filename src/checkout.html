@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Порівняння цін</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f5f4f0;
+    color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Top bar ── */
+  #topbar {
+    background: #fff;
+    border-bottom: 1px solid #e5e3dc;
+    padding: 0 20px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    z-index: 100;
+  }
+  #back-link {
+    color: #2a7de1; text-decoration: none; font-size: 13px; font-weight: 500;
+    white-space: nowrap; display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+  }
+  #back-link:hover { text-decoration: underline; }
+  .topbar-divider { width: 1px; height: 20px; background: #e5e3dc; flex-shrink: 0; }
+  #shops-chips { display: flex; gap: 5px; flex-wrap: nowrap; overflow: hidden; flex: 1; }
+  .shop-chip {
+    display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px;
+    border: 1.5px solid transparent; font-size: 11px; font-weight: 500; white-space: nowrap; flex-shrink: 0;
+  }
+  .chip-atb   { background: #fff8ec; border-color: #e8a020; color: #7a4e00; }
+  .chip-varus { background: #eaf3ff; border-color: #2a7de1; color: #0a3d7c; }
+
+  /* ── Body split ── */
+  #body-split { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Main (left) ── */
+  #main { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  #main::-webkit-scrollbar { width: 4px; }
+  #main::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+  /* ── Search card ── */
+  #search-card {
+    background: #fff; border-radius: 10px; padding: 14px;
+    margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  #search-row { display: flex; gap: 8px; }
+  #query-wrap { flex: 1; position: relative; }
+  #query-input {
+    width: 100%; padding: 9px 12px 9px 34px;
+    border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; outline: none;
+    transition: border-color 0.15s;
+  }
+  #query-input:focus { border-color: #2a7de1; }
+  #query-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #aaa; pointer-events: none; }
+  #btn-search {
+    padding: 9px 20px; border-radius: 8px;
+    background: #2a7de1; color: #fff; border: none;
+    font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  #btn-search:hover:not(:disabled) { background: #1a5ead; }
+  #btn-search:disabled { opacity: 0.45; cursor: not-allowed; }
+  #status-row {
+    margin-top: 9px; min-height: 16px;
+    font-size: 12px; color: #888; display: flex; align-items: center; gap: 7px;
+  }
+  .spinner-sm {
+    width: 13px; height: 13px; flex-shrink: 0;
+    border: 2px solid #e5e3dc; border-top-color: #2a7de1;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Results ── */
+  #results-summary { font-size: 11px; color: #999; margin-bottom: 10px; }
+
+  .group-card {
+    background: #fff; border-radius: 10px; padding: 14px;
+    margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    border: 1.5px solid transparent; transition: border-color 0.2s;
+  }
+  .group-card.in-cart { border-color: #1a7a3c; }
+
+  .group-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .group-title { font-size: 13px; font-weight: 600; color: #111; flex: 1; }
+  .btn-add {
+    padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 500;
+    border: 1.5px solid #2a7de1; color: #2a7de1; background: none; cursor: pointer;
+    white-space: nowrap; transition: all 0.15s; flex-shrink: 0;
+  }
+  .btn-add:hover { background: #f0f6ff; }
+  .btn-add.added { background: #1a7a3c; border-color: #1a7a3c; color: #fff; }
+
+  .offers-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .offer-card {
+    width: 140px; border: 1.5px solid #ededea; border-radius: 9px;
+    padding: 9px; display: flex; flex-direction: column; gap: 5px;
+    position: relative; transition: box-shadow 0.15s; flex-shrink: 0;
+  }
+  .offer-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .offer-card.cheapest { border-color: #1a7a3c; background: #f6fff9; }
+  .cheapest-badge {
+    position: absolute; top: -1px; right: -1px;
+    background: #1a7a3c; color: #fff; font-size: 9px; font-weight: 700;
+    padding: 2px 6px; border-radius: 0 8px 0 6px; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .offer-img { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 5px; background: #fafaf8; }
+  .offer-img-ph { width: 100%; aspect-ratio: 1; border-radius: 5px; background: #f0efeb; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .offer-brand-row { display: flex; align-items: center; gap: 4px; }
+  .offer-badge { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
+  .badge-atb   { background: #fff0d0; color: #7a4e00; }
+  .badge-varus { background: #ddeeff; color: #0a3d7c; }
+  .offer-shop { font-size: 10px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  .offer-name { font-size: 10px; color: #333; line-height: 1.3; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .price-actual { font-size: 13px; font-weight: 700; color: #111; }
+  .price-actual.sale { color: #d63031; }
+  .price-old { font-size: 10px; color: #bbb; text-decoration: line-through; }
+  .offer-link { font-size: 10px; color: #2a7de1; text-decoration: none; font-weight: 500; }
+  .offer-link:hover { text-decoration: underline; }
+
+  .empty-results { text-align: center; padding: 50px 20px; color: #aaa; font-size: 13px; }
+
+  /* ── Cart panel (right) ── */
+  #cart-panel {
+    width: 300px; flex-shrink: 0;
+    background: #fff; border-left: 1px solid #e5e3dc;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  #cart-header {
+    padding: 14px 16px 10px; border-bottom: 1px solid #e5e3dc; flex-shrink: 0;
+  }
+  #cart-title { font-size: 13px; font-weight: 600; color: #111; }
+  #cart-subtitle { font-size: 11px; color: #888; margin-top: 2px; }
+
+  #cart-body { flex: 1; overflow-y: auto; }
+  #cart-body::-webkit-scrollbar { width: 4px; }
+  #cart-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+  /* empty cart */
+  #cart-empty {
+    padding: 40px 16px; text-align: center; color: #bbb; font-size: 12px; line-height: 1.6;
+  }
+  #cart-empty svg { display: block; margin: 0 auto 12px; opacity: 0.3; }
+
+  /* shop receipt rows */
+  .receipt-row {
+    border-bottom: 1px solid #f0efeb; cursor: pointer;
+    transition: background 0.1s;
+  }
+  .receipt-row:hover { background: #fafaf8; }
+  .receipt-summary {
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .receipt-icon { font-size: 12px; flex-shrink: 0; }
+  .receipt-shop-name { font-size: 12px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .receipt-right { text-align: right; flex-shrink: 0; }
+  .receipt-total { font-size: 13px; font-weight: 700; color: #111; }
+  .receipt-count { font-size: 10px; color: #999; margin-top: 1px; }
+  .receipt-row.best .receipt-total { color: #1a7a3c; }
+  .receipt-row.partial .receipt-count { color: #c47a00; }
+
+  .receipt-items { display: none; padding: 0 16px 10px; }
+  .receipt-row.expanded .receipt-items { display: block; }
+  .receipt-item {
+    display: flex; align-items: baseline; gap: 6px;
+    padding: 4px 0; border-top: 1px solid #f5f5f3; font-size: 11px;
+  }
+  .ri-name { flex: 1; color: #444; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ri-price { color: #111; font-weight: 600; white-space: nowrap; }
+  .ri-missing { color: #bbb; font-style: italic; }
+  .receipt-subtotal {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 6px; margin-top: 4px; border-top: 1.5px solid #e5e3dc;
+    font-size: 12px; font-weight: 700; color: #111;
+  }
+  .receipt-subtotal .warn { font-size: 10px; color: #c47a00; font-weight: 400; }
+
+  /* footer */
+  #cart-footer {
+    padding: 10px 16px; border-top: 1px solid #e5e3dc; flex-shrink: 0;
+  }
+  #btn-clear-cart {
+    width: 100%; padding: 8px; border-radius: 7px;
+    background: none; border: 1px solid #ddd; color: #888;
+    font-size: 12px; cursor: pointer; transition: background 0.12s, color 0.12s;
+  }
+  #btn-clear-cart:hover { background: #fff0f0; border-color: #f0a0a0; color: #d63031; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <a href="/" id="back-link">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15,18 9,12 15,6"/></svg>
+    Карта
+  </a>
+  <div class="topbar-divider"></div>
+  <div id="shops-chips"></div>
+</div>
+
+<div id="body-split">
+  <!-- Left: search + results -->
+  <div id="main">
+    <div id="search-card">
+      <div id="search-row">
+        <div id="query-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="query-input" placeholder="Що шукати? Напр. «молоко», «хліб»"/>
+        </div>
+        <button id="btn-search">Шукати</button>
+      </div>
+      <div id="status-row"></div>
+    </div>
+
+    <div id="results-summary"></div>
+    <div id="results-content"></div>
+  </div>
+
+  <!-- Right: cart -->
+  <div id="cart-panel">
+    <div id="cart-header">
+      <div id="cart-title">Кошик порівняння</div>
+      <div id="cart-subtitle">Додайте товари для порівняння цін</div>
+    </div>
+    <div id="cart-body">
+      <div id="cart-empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        Натисніть «+» на товарі,<br/>щоб додати до порівняння
+      </div>
+      <div id="cart-receipts"></div>
+    </div>
+    <div id="cart-footer" style="display:none">
+      <button id="btn-clear-cart">Очистити кошик</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BRANDS = {
+  atb:   { label: "АТБ",   chipClass: "chip-atb",   badgeClass: "badge-atb"   },
+  varus: { label: "Варус", chipClass: "chip-varus", badgeClass: "badge-varus" },
+};
+
+/* ── Selected shops from map ── */
+const selectedShops = JSON.parse(localStorage.getItem("selected_shops") || "[]");
+if (!selectedShops.length) window.location.href = "/";
+
+selectedShops.forEach(s => {
+  const chip = document.createElement("span");
+  chip.className = `shop-chip ${BRANDS[s.brand].chipClass}`;
+  chip.textContent = s.name;
+  document.getElementById("shops-chips").appendChild(chip);
+});
+
+/* ── Cart state ── */
+// Each item: { canonical, offers: { "atb_964": {...}, "varus_130700": {...} } }
+const cart = [];
+
+function cartHas(canonical) {
+  return cart.some(item => item.canonical === canonical);
+}
+
+function toggleCartItem(group) {
+  const idx = cart.findIndex(item => item.canonical === group.canonical);
+  if (idx >= 0) {
+    cart.splice(idx, 1);
+  } else {
+    cart.push({ canonical: group.canonical, offers: group.offers });
+  }
+  renderCart();
+  renderResultButtons();
+}
+
+/* ── Compute per-shop receipts ── */
+function computeReceipts() {
+  if (!cart.length) return [];
+
+  const shopKeys = new Set();
+  cart.forEach(item => Object.keys(item.offers).forEach(k => shopKeys.add(k)));
+
+  return [...shopKeys].map(shopKey => {
+    const lines = cart.map(item => {
+      const offer = item.offers[shopKey] || null;
+      return { canonical: item.canonical, offer };
+    });
+    const available = lines.filter(l => l.offer !== null);
+    const total = available.reduce((s, l) => s + l.offer.actual_price, 0);
+    const sampleOffer = available[0]?.offer;
+
+    return {
+      shopKey,
+      shopName: sampleOffer?.shop_name ?? shopKey,
+      brand: sampleOffer?.brand ?? "atb",
+      total,
+      availableCount: available.length,
+      totalCount: cart.length,
+      lines,
+    };
+  }).sort((a, b) => {
+    // full basket first, then cheapest
+    if (b.availableCount !== a.availableCount) return b.availableCount - a.availableCount;
+    return a.total - b.total;
+  });
+}
+
+/* ── Render cart ── */
+let expandedShop = null;
+
+function renderCart() {
+  const receipts = computeReceipts();
+  const isEmpty = cart.length === 0;
+
+  document.getElementById("cart-empty").style.display = isEmpty ? "block" : "none";
+  document.getElementById("cart-footer").style.display = isEmpty ? "none" : "block";
+
+  const title = document.getElementById("cart-title");
+  const subtitle = document.getElementById("cart-subtitle");
+  title.textContent = isEmpty ? "Кошик порівняння" : `Кошик порівняння (${cart.length})`;
+  subtitle.textContent = isEmpty
+    ? "Додайте товари для порівняння цін"
+    : `${receipts.length} магазин${plural(receipts.length, "", "и", "ів")}`;
+
+  const bestTotal = receipts.find(r => r.availableCount === r.totalCount)?.total ?? null;
+
+  const container = document.getElementById("cart-receipts");
+  container.innerHTML = receipts.map((r, i) => {
+    const isBest = bestTotal !== null && r.total === bestTotal && r.availableCount === r.totalCount;
+    const isPartial = r.availableCount < r.totalCount;
+    const isExpanded = expandedShop === r.shopKey;
+    const icon = isBest ? "★" : isPartial ? "⚠" : "✓";
+
+    const linesHtml = r.lines.map(l => {
+      if (!l.offer) {
+        return `<div class="receipt-item">
+          <span class="ri-name">${esc(l.canonical)}</span>
+          <span class="ri-missing">немає</span>
+        </div>`;
+      }
+      const isDiscount = l.offer.special_price !== null && l.offer.special_price !== undefined;
+      return `<div class="receipt-item">
+        <span class="ri-name">${esc(l.canonical)}</span>
+        <span class="ri-price${isDiscount ? ' sale' : ''}">${l.offer.actual_price.toFixed(2)} грн</span>
+      </div>`;
+    }).join("");
+
+    const missing = r.totalCount - r.availableCount;
+    return `<div class="receipt-row${isBest ? " best" : ""}${isPartial ? " partial" : ""}${isExpanded ? " expanded" : ""}" data-shop="${esc(r.shopKey)}">
+      <div class="receipt-summary">
+        <span class="receipt-icon">${icon}</span>
+        <span class="receipt-shop-name">${esc(r.shopName)}</span>
+        <div class="receipt-right">
+          <div class="receipt-total">${r.total.toFixed(2)} грн</div>
+          <div class="receipt-count">${r.availableCount}/${r.totalCount}${missing ? ` · ⚠${missing} немає` : ""}</div>
+        </div>
+      </div>
+      <div class="receipt-items">
+        ${linesHtml}
+        <div class="receipt-subtotal">
+          <span>${isBest ? "★ Найкращий кошик" : isPartial ? `<span class="warn">Неповний кошик</span>` : "Разом"}</span>
+          <span>${r.total.toFixed(2)} грн</span>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  container.querySelectorAll(".receipt-row").forEach(el => {
+    el.addEventListener("click", () => {
+      const key = el.dataset.shop;
+      expandedShop = expandedShop === key ? null : key;
+      renderCart();
+    });
+  });
+}
+
+function renderResultButtons() {
+  document.querySelectorAll(".btn-add").forEach(btn => {
+    const canonical = btn.dataset.canonical;
+    const inCart = cartHas(canonical);
+    btn.textContent = inCart ? "✓ В кошику" : "+ Додати";
+    btn.classList.toggle("added", inCart);
+    btn.closest(".group-card")?.classList.toggle("in-cart", inCart);
+  });
+}
+
+document.getElementById("btn-clear-cart").addEventListener("click", () => {
+  cart.length = 0;
+  expandedShop = null;
+  renderCart();
+  renderResultButtons();
+});
+
+/* ── Search ── */
+document.getElementById("query-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") doSearch();
+});
+document.getElementById("btn-search").addEventListener("click", doSearch);
+
+function setStatus(msg, loading = false) {
+  document.getElementById("status-row").innerHTML = loading
+    ? `<div class="spinner-sm"></div><span>${esc(msg)}</span>`
+    : `<span>${esc(msg)}</span>`;
+}
+
+async function doSearch() {
+  const query = document.getElementById("query-input").value.trim();
+  if (!query) return;
+
+  const btn = document.getElementById("btn-search");
+  btn.disabled = true;
+  document.getElementById("results-content").innerHTML = "";
+  document.getElementById("results-summary").textContent = "";
+
+  try {
+    setStatus("Шукаю товари…", true);
+    const searchRes = await fetch("/api/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query,
+        shops: selectedShops.map(s => ({ id: s.id, brand: s.brand })),
+      }),
+    });
+    if (!searchRes.ok) throw new Error(`HTTP ${searchRes.status}`);
+    const searchData = await searchRes.json();
+
+    const totalRaw = searchData.reduce((s, r) => s + r.products.length, 0);
+    if (!totalRaw) {
+      setStatus("Нічого не знайдено");
+      document.getElementById("results-content").innerHTML =
+        '<div class="empty-results">Товарів за запитом не знайдено</div>';
+      return;
+    }
+
+    setStatus("Класифікую результати…", true);
+    const matchRes = await fetch("/api/match", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ results: searchData }),
+    });
+    if (!matchRes.ok) throw new Error(`HTTP ${matchRes.status}`);
+    const groups = await matchRes.json();
+
+    setStatus(`Знайдено ${groups.length} груп${plural(groups.length, "а", "и", "")}`);
+    renderResults(groups);
+  } catch (err) {
+    setStatus(`Помилка: ${esc(err.message)}`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+let currentGroups = [];
+
+function renderResults(groups) {
+  currentGroups = groups;
+  const container = document.getElementById("results-content");
+
+  if (!groups.length) {
+    container.innerHTML = '<div class="empty-results">Нічого не знайдено</div>';
+    return;
+  }
+
+  document.getElementById("results-summary").textContent =
+    `${groups.length} груп${plural(groups.length, "а", "и", "")} товарів`;
+
+  container.innerHTML = groups.map(group => {
+    const offers = Object.values(group.offers).sort((a, b) => a.actual_price - b.actual_price);
+    const minPrice = offers[0]?.actual_price ?? Infinity;
+    const inCart = cartHas(group.canonical);
+
+    const offersHtml = offers.map(o => {
+      const b = BRANDS[o.brand];
+      const isCheapest = o.actual_price === minPrice;
+      const isDiscount = o.special_price !== null && o.special_price !== undefined;
+      const imgHtml = o.image_url
+        ? `<img class="offer-img" src="${esc(o.image_url)}" loading="lazy"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+           <div class="offer-img-ph" style="display:none">🛒</div>`
+        : `<div class="offer-img-ph">🛒</div>`;
+
+      return `<div class="offer-card${isCheapest && offers.length > 1 ? " cheapest" : ""}">
+        ${isCheapest && offers.length > 1 ? '<span class="cheapest-badge">Вигідно</span>' : ""}
+        ${imgHtml}
+        <div class="offer-brand-row">
+          <span class="offer-badge ${b.badgeClass}">${b.label}</span>
+          <span class="offer-shop" title="${esc(o.shop_name)}">${esc(o.shop_name)}</span>
+        </div>
+        <div class="offer-name" title="${esc(o.name)}">${esc(o.name)}</div>
+        <div>
+          <span class="price-actual${isDiscount ? " sale" : ""}">${o.actual_price.toFixed(2)} грн</span>
+          ${isDiscount ? `<br><span class="price-old">${o.price.toFixed(2)} грн</span>` : ""}
+        </div>
+        ${o.url ? `<a class="offer-link" href="${esc(o.url)}" target="_blank" rel="noopener">Переглянути →</a>` : ""}
+      </div>`;
+    }).join("");
+
+    return `<div class="group-card${inCart ? " in-cart" : ""}">
+      <div class="group-header">
+        <div class="group-title">${esc(group.canonical)}</div>
+        <button class="btn-add${inCart ? " added" : ""}" data-canonical="${esc(group.canonical)}">
+          ${inCart ? "✓ В кошику" : "+ Додати"}
+        </button>
+      </div>
+      <div class="offers-row">${offersHtml}</div>
+    </div>`;
+  }).join("");
+
+  container.querySelectorAll(".btn-add").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const canonical = btn.dataset.canonical;
+      const group = currentGroups.find(g => g.canonical === canonical);
+      if (group) toggleCartItem(group);
+    });
+  });
+}
+
+/* ── Utils ── */
+function plural(n, one = "", few = "и", many = "ів") {
+  if (n % 10 === 1 && n % 100 !== 11) return one;
+  if (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14)) return few;
+  return many;
+}
+function esc(s) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/* ── Init ── */
+renderCart();
+</script>
+</body>
+</html>

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Вибір магазинів</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f5f4f0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    color: #1a1a1a;
+  }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid #e5e3dc;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.06);
+    z-index: 10;
+  }
+
+  #sidebar-header {
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid #e5e3dc;
+    flex-shrink: 0;
+  }
+  h1 { font-size: 14px; font-weight: 600; color: #111; margin-bottom: 10px; letter-spacing: -0.2px; }
+
+  #brands { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .brand-chip {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 999px;
+    border: 1.5px solid transparent;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s; user-select: none;
+  }
+  .brand-chip:active { transform: scale(0.96); }
+  .brand-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .brand-chip.off { opacity: 0.35; filter: grayscale(1); }
+  .chip-atb   { background: #fff8ec; border-color: #e8a020; color: #7a4e00; }
+  .chip-atb .dot   { background: #e8a020; }
+  .chip-varus { background: #eaf3ff; border-color: #2a7de1; color: #0a3d7c; }
+  .chip-varus .dot { background: #2a7de1; }
+
+  .filter-wrap { position: relative; }
+  .filter-wrap input {
+    width: 100%; padding: 7px 10px 7px 30px;
+    border: 1px solid #ddd; border-radius: 8px;
+    font-size: 12px; background: #fafaf8; outline: none;
+    transition: border-color 0.15s;
+  }
+  .filter-wrap input:focus { border-color: #888; background: #fff; }
+  .filter-wrap svg {
+    position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+    color: #bbb; pointer-events: none;
+  }
+
+  /* ── Geo section ── */
+  #geo-section {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e5e3dc;
+    flex-shrink: 0;
+    background: #fafaf8;
+  }
+  .sec-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: #999; margin-bottom: 8px;
+  }
+
+  #btn-geo {
+    width: 100%; padding: 8px;
+    border-radius: 8px;
+    background: #fff; border: 1.5px solid #2a7de1;
+    color: #2a7de1; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: background 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-bottom: 8px;
+  }
+  #btn-geo:hover { background: #f0f6ff; }
+  #btn-geo.active { background: #2a7de1; color: #fff; }
+  #btn-geo.loading { opacity: 0.6; cursor: wait; }
+
+  .radius-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .radius-row label { font-size: 11px; color: #666; white-space: nowrap; }
+  .radius-row input[type=range] { flex: 1; accent-color: #2a7de1; }
+  #radius-val { font-size: 11px; font-weight: 600; color: #111; min-width: 44px; text-align: right; }
+
+  #geo-hint { font-size: 11px; color: #888; margin-top: 6px; display: none; }
+
+  /* ── List ── */
+  #list-header {
+    padding: 7px 14px 4px;
+    font-size: 11px; color: #999; font-weight: 500;
+    display: flex; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #list-header .sel-count { color: #2a7de1; font-weight: 600; }
+
+  .list-actions {
+    display: flex; gap: 6px;
+    padding: 0 14px 6px;
+    flex-shrink: 0;
+  }
+  .small-btn {
+    font-size: 11px; padding: 3px 8px;
+    border-radius: 6px; border: 1px solid #ddd;
+    background: none; color: #555; cursor: pointer;
+    white-space: nowrap; transition: background 0.12s;
+  }
+  .small-btn:hover { background: #f0efeb; }
+
+  #store-list { flex: 1; overflow-y: auto; }
+  #store-list::-webkit-scrollbar { width: 4px; }
+  #store-list::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+  .store-item {
+    padding: 8px 14px; cursor: pointer;
+    border-bottom: 1px solid #f0efeb;
+    transition: background 0.1s;
+    display: flex; align-items: flex-start; gap: 9px;
+    user-select: none;
+  }
+  .store-item:hover { background: #fafaf8; }
+  .store-item.selected { background: #f0f6ff; }
+
+  .item-checkbox {
+    width: 15px; height: 15px;
+    border: 2px solid #ccc; border-radius: 4px;
+    flex-shrink: 0; margin-top: 2px;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .store-item.selected .item-checkbox { border-color: #2a7de1; background: #2a7de1; }
+  .item-checkbox svg { display: none; }
+  .store-item.selected .item-checkbox svg { display: block; }
+
+  .item-info { flex: 1; min-width: 0; }
+  .item-top { display: flex; align-items: center; gap: 5px; margin-bottom: 2px; }
+  .item-badge {
+    font-size: 10px; font-weight: 600; padding: 1px 6px;
+    border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+  }
+  .badge-atb   { background: #fff0d0; color: #7a4e00; }
+  .badge-varus { background: #ddeeff; color: #0a3d7c; }
+  .item-name {
+    font-size: 12px; font-weight: 500; color: #111;
+    flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .item-addr { font-size: 11px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-dist { font-size: 11px; color: #2a7de1; font-weight: 500; margin-top: 1px; }
+  .item-worktime { font-size: 11px; color: #aaa; }
+
+  .empty-state { padding: 32px 14px; text-align: center; color: #aaa; font-size: 13px; }
+
+  /* ── Footer ── */
+  #sidebar-footer {
+    padding: 10px 14px;
+    border-top: 1px solid #e5e3dc;
+    flex-shrink: 0;
+    background: #fff;
+  }
+  #btn-checkout {
+    width: 100%; padding: 11px;
+    border-radius: 9px;
+    background: #1a7a3c; color: #fff;
+    border: none; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background 0.15s, opacity 0.15s;
+    letter-spacing: -0.1px;
+  }
+  #btn-checkout:hover:not(:disabled) { background: #145f2e; }
+  #btn-checkout:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── Map ── */
+  #map { flex: 1; z-index: 1; min-width: 0; }
+
+  .leaflet-popup-content-wrapper { border-radius: 10px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.14) !important; }
+  .leaflet-popup-content { margin: 11px 14px !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .popup-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 4px; margin-bottom: 5px; }
+  .popup-name { font-size: 13px; font-weight: 600; color: #111; margin-bottom: 3px; }
+  .popup-addr { font-size: 12px; color: #666; margin-bottom: 2px; }
+  .popup-worktime { font-size: 11px; color: #999; }
+  .popup-dist { font-size: 11px; color: #2a7de1; font-weight: 500; margin-top: 5px; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Вибір магазинів</h1>
+    <div id="brands"></div>
+    <div class="filter-wrap">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="filter-input" placeholder="Назва або адреса…"/>
+    </div>
+  </div>
+
+  <div id="geo-section">
+    <div class="sec-label">Найближчі магазини</div>
+    <button id="btn-geo">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+      </svg>
+      Моя геопозиція
+    </button>
+    <div class="radius-row">
+      <label>Радіус:</label>
+      <input type="range" id="radius-slider" min="100" max="5000" step="100" value="500"/>
+      <span id="radius-val">500 м</span>
+    </div>
+    <div id="geo-hint"></div>
+  </div>
+
+  <div id="list-header">
+    <span>Магазини: <span id="count">0</span></span>
+    <span class="sel-count">Вибрано: <span id="sel-count">0</span></span>
+  </div>
+  <div class="list-actions">
+    <button class="small-btn" id="btn-sel-visible">Всі видимі</button>
+    <button class="small-btn" id="btn-clear-sel">Скинути</button>
+  </div>
+  <div id="store-list"></div>
+
+  <div id="sidebar-footer">
+    <button id="btn-checkout" disabled>Вибрати магазини (0)</button>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const BRANDS = {
+  atb:   { label: "АТБ",   color: "#e8a020", chipClass: "chip-atb",   badgeClass: "badge-atb"   },
+  varus: { label: "Варус", color: "#2a7de1", chipClass: "chip-varus", badgeClass: "badge-varus" },
+};
+
+const state = {
+  shops: [],
+  activeBrands: new Set(["atb", "varus"]),
+  filterQuery: "",
+  selectedIds: new Set(),
+  geoPos: null,    // { lat, lon }
+  radiusM: 500,
+};
+
+/* ── Map ── */
+const map = L.map("map", { zoomControl: false }).setView([50.45, 30.52], 12);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+}).addTo(map);
+L.control.zoom({ position: "bottomright" }).addTo(map);
+
+let radiusCircle = null;
+let geoMarker = null;
+
+function setGeoLayer(pos, radiusM) {
+  if (radiusCircle) { map.removeLayer(radiusCircle); radiusCircle = null; }
+  if (geoMarker)    { map.removeLayer(geoMarker);    geoMarker = null; }
+  if (!pos) return;
+  const latlng = [pos.lat, pos.lon];
+  radiusCircle = L.circle(latlng, {
+    radius: radiusM, color: "#2a7de1", fillColor: "#2a7de1",
+    fillOpacity: 0.07, weight: 1.5, dashArray: "4 4",
+  }).addTo(map);
+  geoMarker = L.circleMarker(latlng, {
+    radius: 7, color: "#2a7de1", fillColor: "#fff", fillOpacity: 1, weight: 2.5,
+  }).addTo(map);
+}
+
+/* ── Icons ── */
+function makeIcon(brand, selected) {
+  const color = BRANDS[brand].color;
+  const letter = BRANDS[brand].label[0];
+  const w = selected ? 32 : 28, h = selected ? 42 : 36;
+  const ring = selected
+    ? `<circle cx="14" cy="14" r="12.5" fill="none" stroke="white" stroke-width="3.5" opacity="0.95"/>`
+    : "";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 28 36">
+    <path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 22 14 22S28 24.5 28 14C28 6.3 21.7 0 14 0z" fill="${color}"/>
+    ${ring}<circle cx="14" cy="14" r="9" fill="white" opacity="0.92"/>
+    <text x="14" y="18.5" text-anchor="middle" font-size="11" font-weight="700" fill="${color}" font-family="-apple-system,sans-serif">${letter}</text>
+  </svg>`;
+  return L.icon({
+    iconUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg),
+    iconSize: [w, h], iconAnchor: [w / 2, h], popupAnchor: [0, -h - 2],
+  });
+}
+
+/* ── Markers ── */
+const markers = {};
+
+function initMarkers(shops) {
+  shops.forEach(s => {
+    const m = L.marker([s.lat, s.lon], { icon: makeIcon(s.brand, false) });
+    m.on("click", () => toggleSelect(s.id));
+    markers[s.id] = m;
+  });
+}
+
+/* ── Helpers ── */
+function haversineM(lat1, lon1, lat2, lon2) {
+  const R = 6371000, r = Math.PI / 180;
+  const dLat = (lat2 - lat1) * r, dLon = (lon2 - lon1) * r;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function fmtDist(m) {
+  return m < 1000 ? Math.round(m) + " м" : (m / 1000).toFixed(1) + " км";
+}
+
+function getVisible() {
+  const q = state.filterQuery.toLowerCase();
+  return state.shops
+    .filter(s => {
+      if (!state.activeBrands.has(s.brand)) return false;
+      if (q && !s.short_name.toLowerCase().includes(q) && !s.address.toLowerCase().includes(q)) return false;
+      return true;
+    })
+    .map(s => ({
+      ...s,
+      dist: state.geoPos ? haversineM(state.geoPos.lat, state.geoPos.lon, s.lat, s.lon) : null,
+    }))
+    .sort((a, b) => (a.dist ?? Infinity) - (b.dist ?? Infinity));
+}
+
+/* ── Render ── */
+function render() {
+  const visible = getVisible();
+  const visibleIds = new Set(visible.map(s => s.id));
+
+  state.shops.forEach(s => {
+    const m = markers[s.id];
+    if (!m) return;
+    const sel = state.selectedIds.has(s.id);
+    if (visibleIds.has(s.id)) {
+      m.setIcon(makeIcon(s.brand, sel));
+      if (!map.hasLayer(m)) m.addTo(map);
+    } else {
+      if (map.hasLayer(m)) map.removeLayer(m);
+    }
+  });
+
+  document.getElementById("count").textContent = visible.length;
+  const n = state.selectedIds.size;
+  document.getElementById("sel-count").textContent = n;
+  const btn = document.getElementById("btn-checkout");
+  btn.disabled = n === 0;
+  btn.textContent = n === 0 ? "Вибрати магазини (0)" : `Перейти до пошуку (${n} магазин${plural(n)})`;
+
+  const CHECK = `<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2.2"><polyline points="1.5,5 4,7.5 8.5,2"/></svg>`;
+  const list = document.getElementById("store-list");
+
+  if (!visible.length) {
+    list.innerHTML = '<div class="empty-state">Нічого не знайдено</div>';
+    return;
+  }
+
+  list.innerHTML = visible.map(s => {
+    const b = BRANDS[s.brand];
+    const sel = state.selectedIds.has(s.id);
+    return `<div class="store-item${sel ? " selected" : ""}" data-id="${s.id}">
+      <div class="item-checkbox">${CHECK}</div>
+      <div class="item-info">
+        <div class="item-top">
+          <span class="item-badge ${b.badgeClass}">${b.label}</span>
+          <span class="item-name">${esc(s.short_name)}</span>
+        </div>
+        <div class="item-addr">${esc(s.address)}</div>
+        ${s.worktime ? `<div class="item-worktime">⏰ ${esc(s.worktime)}</div>` : ""}
+        ${s.dist !== null ? `<div class="item-dist">${fmtDist(s.dist)}</div>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+
+  list.querySelectorAll(".store-item").forEach(el =>
+    el.addEventListener("click", () => toggleSelect(+el.dataset.id))
+  );
+}
+
+function toggleSelect(id) {
+  if (state.selectedIds.has(id)) state.selectedIds.delete(id);
+  else state.selectedIds.add(id);
+  render();
+}
+
+/* ── Brand chips ── */
+Object.entries(BRANDS).forEach(([key, b]) => {
+  const chip = document.createElement("button");
+  chip.className = `brand-chip ${b.chipClass}`;
+  chip.innerHTML = `<span class="dot"></span>${b.label}`;
+  chip.addEventListener("click", () => {
+    if (state.activeBrands.has(key)) {
+      if (state.activeBrands.size === 1) return;
+      state.activeBrands.delete(key);
+      chip.classList.add("off");
+    } else {
+      state.activeBrands.add(key);
+      chip.classList.remove("off");
+    }
+    render();
+  });
+  document.getElementById("brands").appendChild(chip);
+});
+
+/* ── Filter ── */
+document.getElementById("filter-input").addEventListener("input", e => {
+  state.filterQuery = e.target.value;
+  render();
+});
+
+/* ── Select visible / clear ── */
+document.getElementById("btn-sel-visible").addEventListener("click", () => {
+  getVisible().forEach(s => state.selectedIds.add(s.id));
+  render();
+});
+document.getElementById("btn-clear-sel").addEventListener("click", () => {
+  state.selectedIds.clear();
+  render();
+});
+
+/* ── Geolocation ── */
+const btnGeo = document.getElementById("btn-geo");
+const slider = document.getElementById("radius-slider");
+const radiusVal = document.getElementById("radius-val");
+const geoHint = document.getElementById("geo-hint");
+
+function applyGeoSelection() {
+  if (!state.geoPos) return;
+  setGeoLayer(state.geoPos, state.radiusM);
+  let count = 0;
+  state.shops.forEach(s => {
+    const d = haversineM(state.geoPos.lat, state.geoPos.lon, s.lat, s.lon);
+    if (d <= state.radiusM) { state.selectedIds.add(s.id); count++; }
+  });
+  geoHint.textContent = `Знайдено ${count} магазин${plural(count)} у радіусі ${fmtDist(state.radiusM)}`;
+  geoHint.style.display = "block";
+  render();
+}
+
+btnGeo.addEventListener("click", () => {
+  if (!navigator.geolocation) { alert("Геолокація не підтримується"); return; }
+  btnGeo.classList.add("loading");
+  btnGeo.textContent = "Визначаю…";
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      state.geoPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      btnGeo.classList.remove("loading");
+      btnGeo.classList.add("active");
+      btnGeo.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Геопозиція активна`;
+      map.setView([state.geoPos.lat, state.geoPos.lon], 14, { animate: true });
+      applyGeoSelection();
+    },
+    () => {
+      btnGeo.classList.remove("loading");
+      btnGeo.textContent = "Моя геопозиція";
+      alert("Не вдалося отримати геопозицію");
+    }
+  );
+});
+
+slider.addEventListener("input", () => {
+  state.radiusM = +slider.value;
+  radiusVal.textContent = state.radiusM < 1000
+    ? state.radiusM + " м"
+    : (state.radiusM / 1000).toFixed(1) + " км";
+  if (state.geoPos) applyGeoSelection();
+});
+
+/* ── Checkout ── */
+document.getElementById("btn-checkout").addEventListener("click", () => {
+  const selected = [...state.selectedIds].map(id => {
+    const s = state.shops.find(x => x.id === id);
+    return { id: s.id, brand: s.brand, name: s.short_name, address: s.address };
+  });
+  localStorage.setItem("selected_shops", JSON.stringify(selected));
+  window.location.href = "/checkout";
+});
+
+/* ── Utils ── */
+function plural(n) {
+  if (n % 10 === 1 && n % 100 !== 11) return "";
+  if (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14)) return "и";
+  return "ів";
+}
+function esc(s) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/* ── Init ── */
+async function loadShops() {
+  const res = await fetch("/api/shops");
+  state.shops = await res.json();
+  initMarkers(state.shops);
+  render();
+}
+
+loadShops();
+</script>
+</body>
+</html>
