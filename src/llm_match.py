@@ -25,30 +25,51 @@ class LLMMatcher:
         lines = []
 
         for (store, shop_id), store_products in products.items():
-            lines.append(f"\n[{store} | shop_id={shop_id}]")
+            lines.append(f"\n[{store}]")
             for i, p in enumerate(store_products):
                 key = f"{store}:{shop_id}:{i}"
                 index_map[key] = p
                 lines.append(f"  {key}: {p.name}")
 
-        prompt = f"""Згрупуй однакові продукти з різних магазинів.
+        prompt = f"""You are a product matching engine. Group IDENTICAL products from different stores.
 
-        Продукти вважаються однаковими якщо збігаються: бренд, об'єм/вага, жирність, смак, тип упаковки.
-        Допускається різне форматування (0,9 кг = 900 г, 2,6% = 2.6%, п/бут = пляшка).
-        Кожен продукт має потрапити рівно в одну групу, навіть якщо пари немає.
+Two products are identical ONLY when ALL of the following match exactly:
+1. Brand / manufacturer
+2. Flavor, filling, or variety (soy sauce ≠ gouda cheese ≠ bacon — these are DIFFERENT products)
+3. Volume or weight (1 L ≠ 1.25 L ≠ 1.5 L; 30 g ≠ 50 g — even "close" sizes are different products)
+4. Fat content, if stated (2.5% ≠ 3.2%)
+5. Product type (snack ≠ drink, even same brand)
 
-        Продукти:
-        {chr(10).join(lines)}
+Allowed formatting variants (same product): 0.9 kg = 900 g | 2,6% = 2.6% | "пл" = "пляшка" | minor name reordering.
 
-        Поверни ТІЛЬКИ валідний JSON без markdown та коментарів:
-        {{
-        "groups": [
-            {{
-            "canonical": "Молоко Яготинське ультрапастеризоване 2.6% 900г",
-            "matches": ["atb:1262:0", "varus:42:2"]
-            }}
-        ]
-        }}"""
+NEVER group these — they are distinct products, each gets its own group:
+  ✗ Same brand, different flavor: "РябChick сушені соєвий соус 30г" vs "РябChick сушені сир гауда 30г"
+  ✗ Same brand, different volume: "Кока-кола 1 л" vs "Кока-кола 1.25 л"
+  ✗ Same brand, different fat%: "молоко 2.5%" vs "молоко 3.2%"
+
+When in doubt → separate groups. More groups is always safer than wrong merges.
+Every product must appear in exactly one group. If a product has no match — it gets its own single-item group.
+
+Products:
+{chr(10).join(lines)}
+
+Return ONLY valid JSON, no markdown, no comments:
+{{
+  "groups": [
+    {{
+      "canonical": "Молоко Яготинське 2.6% 900г",
+      "matches": ["atb:0:2", "varus:0:5"]
+    }},
+    {{
+      "canonical": "РябChick слайси соєвий соус 30г",
+      "matches": ["atb:0:7"]
+    }},
+    {{
+      "canonical": "РябChick слайси сир гауда 30г",
+      "matches": ["varus:0:3"]
+    }}
+  ]
+}}"""
 
         return prompt, index_map
 
@@ -61,6 +82,7 @@ class LLMMatcher:
         response = await acompletion(
             model=self.model,
             max_tokens=4096,
+            temperature=0.0,
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"},
             api_key=GROQ_API_KEY,
