@@ -1,0 +1,12 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+.env
+.git
+.gitignore
+shared_data
+benchmark
+*.ipynb
+diplom_project.zip
+llm_match

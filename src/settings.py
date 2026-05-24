@@ -5,6 +5,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+
 BASE_DIR = Path(__file__).parent.parent.resolve()
 SHARED_DATA = BASE_DIR / "shared_data"
 SHARED_DATA.mkdir(exist_ok=True)

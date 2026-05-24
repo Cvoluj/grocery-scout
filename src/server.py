@@ -1,5 +1,6 @@
 import asyncio
 import json
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from curl_cffi import AsyncSession
@@ -7,10 +8,10 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from src.atb_api.client import ATBClient
+from src.broker import broker
 from src.models.shops import ATBShop, VarusShop
 from src.settings import LLM_SERVICE_API_KEY, LLM_SERVICE_URL
-from src.varus_api.client import VarusClient
+from src.tasks import search_atb_task, search_varus_task
 
 BASE = Path(__file__).parent.parent
 SHARED_DATA = BASE / "shared_data"
@@ -20,7 +21,15 @@ _varus_shops: list[dict] = json.loads((SHARED_DATA / "varus_shops.json").read_te
 _atb_by_id: dict[int, dict] = {s["id"]: s for s in _atb_shops}
 _varus_by_id: dict[int, dict] = {s["id"]: s for s in _varus_shops}
 
-app = FastAPI(title="Shop Search")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await broker.startup()
+    yield
+    await broker.shutdown()
+
+
+app = FastAPI(title="Shop Search", lifespan=lifespan)
 
 
 @app.get("/")
@@ -52,89 +61,18 @@ class SearchRequest(BaseModel):
     shops: list[ShopRef]
 
 
-async def _search_atb(refs: list[ShopRef], query: str) -> list[dict]:
-    client = ATBClient()
-    shop_objs, tasks = [], []
-    for ref in refs:
-        raw = _atb_by_id.get(ref.id)
-        if not raw:
-            continue
-        shop = ATBShop(
-            id=raw["id"], short_name=raw["short_name"],
-            lat=raw["lat"], lon=raw["lon"],
-            address=raw["address"], worktime=raw.get("worktime", ""),
-        )
-        shop_objs.append(shop)
-        tasks.append(client.search_in_shop(shop, query))
-    found = await asyncio.gather(*tasks, return_exceptions=True)
-    results = []
-    for shop, products in zip(shop_objs, found):
-        if isinstance(products, Exception):
-            products = []
-        results.append({
-            "shop_id": shop.id,
-            "shop_name": f"АТБ — {shop.short_name}",
-            "brand": "atb",
-            "products": [_atb_product(p) for p in products],
-        })
-    return results
-
-
-async def _search_varus(refs: list[ShopRef], query: str) -> list[dict]:
-    client = VarusClient()
-    shop_objs, tasks = [], []
-    for ref in refs:
-        raw = _varus_by_id.get(ref.id)
-        if not raw:
-            continue
-        shop = VarusShop(
-            id=raw["id"], tms_id=raw["tms_id"],
-            short_name=raw["short_name"],
-            lat=raw["lat"], lon=raw["lon"],
-            address=raw["address"],
-        )
-        shop_objs.append(shop)
-        tasks.append(client.search_in_shop(shop, query))
-    found = await asyncio.gather(*tasks, return_exceptions=True)
-    results = []
-    for shop, products in zip(shop_objs, found):
-        if isinstance(products, Exception):
-            products = []
-        results.append({
-            "shop_id": shop.id,
-            "shop_name": shop.short_name,
-            "brand": "varus",
-            "products": [_varus_product(p) for p in products],
-        })
-    return results
-
-
-def _atb_product(p) -> dict:
-    return {
-        "id": p.id, "name": p.name,
-        "price": p.price, "special_price": p.special_price,
-        "in_stock": p.in_stock, "url": p.url, "image_url": p.image_url,
-    }
-
-
-def _varus_product(p) -> dict:
-    return {
-        "id": p.id, "name": p.name,
-        "price": p.price, "special_price": p.special_price,
-        "in_stock": p.in_stock, "url": p.url, "image_url": p.image_url,
-    }
-
-
 @app.post("/api/search")
 async def search(req: SearchRequest):
-    atb_refs = [s for s in req.shops if s.brand == "atb"]
-    varus_refs = [s for s in req.shops if s.brand == "varus"]
+    atb_shops = [_atb_by_id[s.id] for s in req.shops if s.brand == "atb" and s.id in _atb_by_id]
+    varus_shops = [_varus_by_id[s.id] for s in req.shops if s.brand == "varus" and s.id in _varus_by_id]
 
-    atb_results, varus_results = await asyncio.gather(
-        _search_atb(atb_refs, req.query),
-        _search_varus(varus_refs, req.query),
+    jobs = await asyncio.gather(
+        *[search_atb_task.kiq(shop, req.query) for shop in atb_shops],
+        *[search_varus_task.kiq(shop, req.query) for shop in varus_shops],
     )
-    return atb_results + varus_results
+
+    results = await asyncio.gather(*[job.wait_result(timeout=30) for job in jobs])
+    return [r.return_value for r in results]
 
 
 # ── Match ─────────────────────────────────────────────────────────────────────
