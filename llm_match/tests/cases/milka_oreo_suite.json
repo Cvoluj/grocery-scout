@@ -1,0 +1,46 @@
+{
+  "name": "Milka Oreo регресія v1",
+  "cases": [
+    {
+      "query": "мілка орео",
+      "mode": "strict",
+      "shops": [
+        {
+          "shop_id": 964,
+          "shop_name": "АТБ — Героїв полку Азов, буд.5",
+          "brand": "atb",
+          "products": [
+            {"id": "113851_1", "name": "Шоколад 100г Milka молочний з кремовою начинкою та шматочками печива Орео", "price": 102.4, "special_price": null, "in_stock": true, "url": "https://www.atbmarket.com/product/sokolad-100g-milka-molocnij-z-kremovou-nacinkou-ta-smatockami-peciva-oreo", "image_url": null},
+            {"id": "131776_1", "name": "Шоколад 300г молочний Milka з начинкою зі смаком ванілі та печивом Орео", "price": 260.5, "special_price": 129.9, "in_stock": true, "url": "https://www.atbmarket.com/product/sokolad-300g-molocnij-milka-z-nacinkou-zi-smakom-vanili-ta-pecivom-oreo", "image_url": null},
+            {"id": "132166_1", "name": "Шоколад 37г Milka молочний з кремовою начинкою та шматочками печива Орео", "price": 31.4, "special_price": null, "in_stock": true, "url": "https://www.atbmarket.com/product/sokolad-37g-milka-molocnij-z-kremovou-nacinkou-ta-smatockami-peciva-oreo", "image_url": null}
+          ]
+        },
+        {
+          "shop_id": 98,
+          "shop_name": "Варус-523",
+          "brand": "varus",
+          "products": [
+            {"id": "43613", "name": "Шоколад Milka молочний зі смаком ванілі та шматочками печива Oreo 100 г", "price": 100.3, "special_price": 81.9, "in_stock": true, "url": "https://varus.ua/shokolad-milka-molochnij-zi-smakom-vanili-ta-shmatochkami-pechiva-oreo-100-g", "image_url": null},
+            {"id": "2408", "name": "Шоколад Milka Oreo молочний з кремовою начинкою та шматочками печива 37г", "price": 29.5, "special_price": 24.9, "in_stock": true, "url": "https://varus.ua/shokolad-krem-nach-shmat-pech-oreo-milka-37g", "image_url": null},
+            {"id": "6035", "name": "Шоколад Milka молочний з печивом Oreo і начинкою зі смаком ванілі 92 г", "price": 99, "special_price": 69.9, "in_stock": true, "url": "https://varus.ua/shokolad-milka-molochnyj-s-pechenem-oreo-i-nachinkoj-so-vkusom-vanili-92-g", "image_url": null},
+            {"id": "2801", "name": "Шоколад Milka молочний зі шматочками печива Oreo 300 г", "price": 260.5, "special_price": 179.9, "in_stock": true, "url": "https://varus.ua/shokolad-milka-molochnyj-s-kusochkami-pechenya-oreo-300-g", "image_url": null}
+          ]
+        }
+      ],
+      "expected": [
+        {"ids": ["113851_1", "43613"], "comment": "Milka Oreo 100г - однаковий товар, різне написання"},
+        {"ids": ["131776_1", "2801"], "comment": "Milka Oreo 300г - однаковий товар, різне написання"},
+        {"ids": ["132166_1", "2408"], "comment": "Milka Oreo 37г - однаковий товар, різне написання"},
+        {"ids": ["6035"], "comment": "Milka Oreo 92г Varus - без пари у ATB"}
+      ],
+      "must_not_group": [
+        {"ids": ["113851_1", "132166_1"], "comment": "100г ≠ 37г"},
+        {"ids": ["113851_1", "2801"], "comment": "100г ≠ 300г"},
+        {"ids": ["113851_1", "6035"], "comment": "100г ≠ 92г"},
+        {"ids": ["132166_1", "6035"], "comment": "37г ≠ 92г"},
+        {"ids": ["131776_1", "113851_1"], "comment": "300г ≠ 100г"},
+        {"ids": ["131776_1", "6035"], "comment": "300г ≠ 92г"}
+      ]
+    }
+  ]
+}

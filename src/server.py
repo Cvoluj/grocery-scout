@@ -2,14 +2,14 @@ import asyncio
 import json
 from pathlib import Path
 
+from curl_cffi import AsyncSession
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from src.atb_api.client import ATBClient
-from src.llm_match import LLMMatcher
-from src.models.products import Product
 from src.models.shops import ATBShop, VarusShop
+from src.settings import LLM_SERVICE_API_KEY, LLM_SERVICE_URL
 from src.varus_api.client import VarusClient
 
 BASE = Path(__file__).parent.parent
@@ -39,6 +39,8 @@ def get_shops():
     varus = [{**s, "brand": "varus"} for s in _varus_shops]
     return atb + varus
 
+
+# ── Search ────────────────────────────────────────────────────────────────────
 
 class ShopRef(BaseModel):
     id: int
@@ -156,76 +158,30 @@ class ShopResult(BaseModel):
 
 class MatchRequest(BaseModel):
     results: list[ShopResult]
-
-
-def _prepare_for_matching(results: list[ShopResult]):
-    """
-    Returns:
-      matcher_input  — {(brand, 0): [Product]}  one entry per brand,
-                       products deduplicated by id (any representative).
-      shop_lookup    — {(brand, product_id): [shop_offer]}  every shop
-                       that carries the product with its own price.
-    """
-    brand_products: dict[str, dict[str, Product]] = {}
-    shop_lookup: dict[tuple[str, str], list[dict]] = {}
-
-    for shop in results:
-        brand = shop.brand
-        brand_products.setdefault(brand, {})
-
-        for p in shop.products:
-            actual = p.special_price if p.special_price is not None else p.price
-            key = (brand, p.id)
-
-            shop_lookup.setdefault(key, []).append({
-                "shop_id": shop.shop_id,
-                "shop_name": shop.shop_name,
-                "price": p.price,
-                "special_price": p.special_price,
-                "actual_price": actual,
-            })
-
-            if p.id not in brand_products[brand]:
-                brand_products[brand][p.id] = Product(
-                    id=p.id, store=brand, name=p.name,
-                    price=p.price, special_price=p.special_price,
-                    in_stock=p.in_stock, url=p.url, image_url=p.image_url,
-                )
-
-    matcher_input = {
-        (brand, 0): list(products.values())
-        for brand, products in brand_products.items()
-    }
-    return matcher_input, shop_lookup
+    mode: str = "strict"
 
 
 @app.post("/api/match")
 async def match(req: MatchRequest):
-    matcher_input, shop_lookup = _prepare_for_matching(req.results)
-    matched = await LLMMatcher().match(matcher_input)
+    shops = [
+        {
+            "shop_id": shop.shop_id,
+            "shop_name": shop.shop_name,
+            "brand": shop.brand,
+            "products": [p.model_dump() for p in shop.products],
+        }
+        for shop in req.results
+    ]
 
-    output = []
-    for m in matched:
-        offers = {}
-        for (store, _), product in m.offers.items():
-            shops = shop_lookup.get((store, product.id), [])
-            for shop in sorted(shops, key=lambda s: s["actual_price"]):
-                key = f"{store}_{shop['shop_id']}"
-                offers[key] = {
-                    "brand": store,
-                    "shop_id": shop["shop_id"],
-                    "shop_name": shop["shop_name"],
-                    "product_id": product.id,
-                    "name": product.name,
-                    "url": product.url,
-                    "image_url": product.image_url,
-                    "price": shop["price"],
-                    "special_price": shop["special_price"],
-                    "actual_price": shop["actual_price"],
-                }
-        output.append({"canonical": m.canonical_name, "offers": offers})
+    async with AsyncSession() as session:
+        resp = await session.post(
+            f"{LLM_SERVICE_URL}/match",
+            json={"shops": shops, "mode": req.mode},
+            headers={"Authorization": f"Bearer {LLM_SERVICE_API_KEY}"},
+        )
+        resp.raise_for_status()
 
-    return output
+    return resp.json()
 
 
 if __name__ == "__main__":
