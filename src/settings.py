@@ -5,6 +5,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+
 BASE_DIR = Path(__file__).parent.parent.resolve()
 SHARED_DATA = BASE_DIR / "shared_data"
 SHARED_DATA.mkdir(exist_ok=True)
@@ -20,6 +22,9 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 ATB_SHOPS_CACHE = SHARED_DATA / "atb_shops.json"
 VARUS_SHOPS_CACHE = SHARED_DATA / "varus_shops.json"
+
+LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL", "http://llm-matcher:8001")
+LLM_SERVICE_API_KEY = os.environ["LLM_SERVICE_API_KEY"]
 
 if __name__ == '__main__':
     print(BASE_DIR)

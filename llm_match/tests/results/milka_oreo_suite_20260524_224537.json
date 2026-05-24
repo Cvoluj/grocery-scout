@@ -1,0 +1,96 @@
+{
+  "timestamp": "2026-05-24T19:45:37.699995+00:00",
+  "suite": "tests\\cases\\milka_oreo_suite.json",
+  "model": "groq/llama-3.3-70b-versatile",
+  "prompts_dir": "default (prompts/)",
+  "score": {
+    "passed": 0,
+    "failed": 1,
+    "total": 1,
+    "pct": 0.0
+  },
+  "cases": [
+    {
+      "query": "мілка орео",
+      "mode": "strict",
+      "prompt": [
+        "You are a product matching engine. Your task: group IDENTICAL products from different stores.",
+        "",
+        "IDENTITY RULES — two products are identical ONLY when ALL match exactly:",
+        "1. Brand / manufacturer",
+        "2. Flavor, filling, or variety",
+        "3. Volume or weight — MUST BE EXACTLY EQUAL after unit normalization:",
+        "   900g = 0.9kg ✓ | 870g ≠ 900g ✗ | 750g ≠ 950g ✗ | 750ml ≠ 1L ✗",
+        "4. Fat content — MUST BE EXACTLY EQUAL: 2.5% ≠ 2.6% ✗ | 1% ≠ 2.5% ✗",
+        "5. Product type: milk ≠ kefir ≠ cocktail ≠ pasta, even same brand",
+        "6. Special properties: \"безлактозний\" ≠ regular | \"ультрапастеризоване\" ≠ \"пастеризоване\" ≠ \"пряжене\"",
+        "7. Target audience: \"для дітей\" ≠ regular product",
+        "",
+        "ALLOWED formatting variants (treat as SAME):",
+        "- 0.9 kg = 900 g | 0.87 kg = 870 g | 2,6% = 2.6%",
+        "- \"пл\" = \"пляшка\" = \"п/бут\" = \"п/пл\"",
+        "- Minor word reordering: \"Молоко 0,9 кг Яготинське 2,6%\" = \"Молоко Яготинське 2,6% 900г\"",
+        "",
+        "FORBIDDEN merges — always separate groups:",
+        "✗ Different volume: 750г ≠ 850г ≠ 870г ≠ 900г ≠ 950г (even if \"close\")",
+        "✗ Different fat%: 1% ≠ 2.5% ≠ 2.6% ≠ 3.2%",
+        "✗ Different flavor: соєвий соус ≠ сир гауда ≠ бекон",
+        "✗ Different type: молоко ≠ кефір ≠ коктейль ≠ паста сиркова",
+        "✗ безлактозний ≠ regular version of same product",
+        "✗ для дітей ≠ regular version",
+        "",
+        "When in doubt → separate groups. More groups is ALWAYS safer than wrong merges.",
+        "Every product must appear in exactly one group.",
+        "",
+        "OUTPUT: valid JSON only, no markdown, no comments:",
+        "{\"groups\": [{\"canonical\": \"...\", \"matches\": [\"store:shop_id:idx\", ...]}, ...]}"
+      ],
+      "passed": false,
+      "checks_ok": 9,
+      "checks_total": 10,
+      "errors": [
+        "  ✗ Milka Oreo 300г - однаковий товар, різне написання\n    Expected together: ['131776_1', '2801']\n    Actual: {'131776_1': ['131776_1'], '2801': ['2801']}"
+      ],
+      "groups": [
+        [
+          {
+            "id": "113851_1",
+            "name": "Шоколад 100г Milka молочний з кремовою начинкою та шматочками печива Орео"
+          },
+          {
+            "id": "43613",
+            "name": "Шоколад Milka молочний зі смаком ванілі та шматочками печива Oreo 100 г"
+          }
+        ],
+        [
+          {
+            "id": "132166_1",
+            "name": "Шоколад 37г Milka молочний з кремовою начинкою та шматочками печива Орео"
+          },
+          {
+            "id": "2408",
+            "name": "Шоколад Milka Oreo молочний з кремовою начинкою та шматочками печива 37г"
+          }
+        ],
+        [
+          {
+            "id": "131776_1",
+            "name": "Шоколад 300г молочний Milka з начинкою зі смаком ванілі та печивом Орео"
+          }
+        ],
+        [
+          {
+            "id": "6035",
+            "name": "Шоколад Milka молочний з печивом Oreo і начинкою зі смаком ванілі 92 г"
+          }
+        ],
+        [
+          {
+            "id": "2801",
+            "name": "Шоколад Milka молочний зі шматочками печива Oreo 300 г"
+          }
+        ]
+      ]
+    }
+  ]
+}

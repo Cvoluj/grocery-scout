@@ -3,3 +3,7 @@ curl_cffi==0.15.0
 pydoll-python==2.22.1
 litellm
 python-dotenv
+taskiq
+taskiq-redis
+taskiq-fastapi
+uvicorn
