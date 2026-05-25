@@ -1,9 +1,9 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path
 
 from litellm import acompletion
+from libs.pb_client import runtime
 
 
 class MatchMode(str, Enum):
@@ -31,19 +31,8 @@ class MatchedProduct:
 
 
 class LLMMatcher:
-    def __init__(
-        self,
-        model: str = "groq/llama-3.3-70b-versatile",
-        api_key: str | None = None,
-        prompts_dir: Path | None = None,
-    ):
-        self.model = model
-        self.api_key = api_key
-        base = prompts_dir or Path(__file__).parent / "prompts"
-        self._prompts = {
-            mode: (base / f"{mode.value}.txt").read_text(encoding="utf-8").strip()
-            for mode in MatchMode
-        }
+    def _get_prompt(self, mode: MatchMode) -> str:
+        return runtime.get(f"PROMPT_{mode.value.upper()}")
 
     def prepare(
         self,
@@ -107,22 +96,24 @@ class LLMMatcher:
         self,
         products: dict[tuple[str, int], list[Product]],
         mode: MatchMode = MatchMode.STRICT,
+        prompt: str | None = None,
     ) -> list[MatchedProduct]:
         product_list, index_map = self._build_product_list(products)
 
         response = await acompletion(
-            model=self.model,
-            max_tokens=4096,
+            model=runtime.get("LLM_MODEL", "groq/llama-3.3-70b-versatile"),
+            max_tokens=int(runtime.get("LLM_MAX_TOKENS", "4096")),
             temperature=0.0,
-            api_key=self.api_key,
+            api_key=runtime.get("LLM_API_KEY"),
             messages=[
-                {"role": "system", "content": self._prompts[mode]},
+                {"role": "system", "content": prompt or self._get_prompt(mode)},
                 {"role": "user", "content": f"Products to group:\n\n{product_list}"},
             ],
             response_format={"type": "json_object"},
         )
 
         raw = response.choices[0].message.content.strip()
+        print("LLM RAW:", raw)
         parsed = json.loads(raw)
 
         results = []
@@ -143,9 +134,10 @@ class LLMMatcher:
         self,
         shops: list[dict],
         mode: MatchMode = MatchMode.STRICT,
+        prompt: str | None = None,
     ) -> list[dict]:
         matcher_input, shop_lookup = self.prepare(shops)
-        matched = await self.match(matcher_input, mode=mode)
+        matched = await self.match(matcher_input, mode=mode, prompt=prompt)
 
         output = []
         for matched_product in matched:

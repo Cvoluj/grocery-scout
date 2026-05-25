@@ -1,3 +1,10 @@
 .venv
 .env
 __pycache__
+
+pb_data/*
+
+settings.txt
+analogs.txt
+strict.txt
+*.zip

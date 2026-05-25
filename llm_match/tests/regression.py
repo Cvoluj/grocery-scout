@@ -3,15 +3,13 @@
 
 Запуск:
   python tests/regression.py tests/cases/yahotynske_suite.json
-  python tests/regression.py tests/cases/yahotynske_suite.json --model groq/llama-3.3-70b-versatile
-  python tests/regression.py tests/cases/yahotynske_suite.json --prompts-dir prompts_v2/
+  python tests/regression.py tests/cases/yahotynske_suite.json --prompt "You are a product matching engine..."
   python tests/regression.py tests/cases/yahotynske_suite.json --verbose
   python tests/regression.py tests/cases/yahotynske_suite.json --output tests/results/my_run.json
 """
 import argparse
 import asyncio
 import json
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,7 +18,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 from llm_match import LLMMatcher, MatchMode
+from libs.pb_client import start_pb, runtime
 
 
 def extract_groups(result: list[dict]) -> list[set[str]]:
@@ -76,7 +77,10 @@ def check_must_not_group(groups: list[set[str]], must_not: list[dict]) -> list[s
 
 
 async def run_suite(
-    suite_path: Path, matcher: LLMMatcher, verbose: bool
+    suite_path: Path,
+    matcher: LLMMatcher,
+    verbose: bool,
+    prompt: str | None,
 ) -> tuple[int, int, list[dict]]:
     suite = json.loads(suite_path.read_text(encoding="utf-8"))
     print(f"\n{'='*60}")
@@ -96,7 +100,11 @@ async def run_suite(
             for p in shop["products"]
         }
 
-        result = await matcher.match_raw(shops=case["shops"], mode=mode)
+        result = await matcher.match_raw(
+            shops=case["shops"],
+            mode=mode,
+            prompt=prompt,
+        )
         groups = extract_groups(result)
 
         if verbose:
@@ -122,7 +130,7 @@ async def run_suite(
         case_results.append({
             "query": query,
             "mode": mode.value,
-            "prompt": matcher._prompts[mode].splitlines(),
+            "prompt": (prompt or matcher._get_prompt(mode)).splitlines(),
             "passed": not bool(errors),
             "checks_ok": ok,
             "checks_total": total,
@@ -140,7 +148,6 @@ def save_results(
     output_path: Path,
     suite_path: Path,
     model: str,
-    prompts_dir: Path | None,
     passed: int,
     failed: int,
     case_results: list[dict],
@@ -150,7 +157,6 @@ def save_results(
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "suite": str(suite_path),
         "model": model,
-        "prompts_dir": str(prompts_dir) if prompts_dir else "default (prompts/)",
         "score": {
             "passed": passed,
             "failed": failed,
@@ -166,24 +172,27 @@ def save_results(
 async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("suite", help="Path to test suite JSON")
-    parser.add_argument("--model", default=os.getenv("LLM_MODEL", "groq/llama-3.3-70b-versatile"))
-    parser.add_argument("--prompts-dir", default=None)
+    parser.add_argument("--prompt", default=None, help="Custom prompt text")
     parser.add_argument("--verbose", action="store_true")
-    parser.add_argument("--output", default=None, help="Where to save results JSON (default: tests/results/<suite>_<ts>.json)")
+    parser.add_argument("--output", default=None)
     args = parser.parse_args()
 
-    prompts_dir = Path(args.prompts_dir) if args.prompts_dir else None
-    matcher = LLMMatcher(
-        model=args.model,
-        api_key=os.environ["GROQ_API_KEY"],
-        prompts_dir=prompts_dir,
-    )
+    await start_pb()
 
-    print(f"Model:   {args.model}")
-    print(f"Prompts: {prompts_dir or 'default (prompts/)'}")
+    model = runtime.get("LLM_MODEL", "groq/llama-3.3-70b-versatile")
+    matcher = LLMMatcher()
+
+    print(f"Model: {model}")
+    if args.prompt:
+        print("Using custom prompt")
 
     suite_path = Path(args.suite)
-    passed, failed, case_results = await run_suite(suite_path, matcher, args.verbose)
+    passed, failed, case_results = await run_suite(
+        suite_path=suite_path,
+        matcher=matcher,
+        verbose=args.verbose,
+        prompt=args.prompt,
+    )
     total = passed + failed
     score = passed / total * 100 if total else 0
 
@@ -197,8 +206,7 @@ async def main():
         slug = suite_path.stem
         output_path = Path(__file__).parent / "results" / f"{slug}_{ts}.json"
 
-    save_results(output_path, suite_path, args.model, prompts_dir, passed, failed, case_results)
-
+    save_results(output_path, suite_path, model, passed, failed, case_results)
     sys.exit(0 if failed == 0 else 1)
 
 
