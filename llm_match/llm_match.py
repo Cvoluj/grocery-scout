@@ -5,6 +5,9 @@ from enum import Enum
 from litellm import acompletion
 from libs.pb_client import runtime
 
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 class MatchMode(str, Enum):
     STRICT = "strict"
@@ -113,7 +116,7 @@ class LLMMatcher:
         )
 
         raw = response.choices[0].message.content.strip()
-        print("LLM RAW:", raw)
+        logger.info("RAW: %s", response.choices[0].message.content)
         parsed = json.loads(raw)
 
         results = []

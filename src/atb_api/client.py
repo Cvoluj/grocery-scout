@@ -10,7 +10,7 @@ from curl_cffi import AsyncSession, Response
 from src.atb_api.headers import GETSTORE_HEADERS, MULTISEARCH_HEADERS
 from src.models.products import ATBProduct
 from src.models.shops import ATBShop
-from src.settings import ATB_SHOPS_CACHE, BROWSER_TYPES_CYCLE
+from src.config import ATB_SHOPS_CACHE, BROWSER_TYPES_CYCLE
 
 _OPTION_RE = re.compile(
     r"<option value='(\d+)' worktime='([^']+)' city='\d+'>([^<]+)</option>"
