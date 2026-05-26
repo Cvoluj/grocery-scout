@@ -1,23 +1,19 @@
-from pathlib import Path
-
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
 
+from src.settings import BASE_DIR
 from src.store_data import atb_shops, varus_shops
 
 router = APIRouter()
 
-_STATIC = Path(__file__).parent.parent / "static"
-
 
 @router.get("/")
 def index():
-    return FileResponse(_STATIC / "store_map.html")
-
+    return FileResponse(BASE_DIR / "src" / "static" / "store_map.html")
 
 @router.get("/checkout")
 def checkout():
-    return FileResponse(_STATIC / "checkout.html")
+    return FileResponse(BASE_DIR / "src" / "static" / "checkout.html")
 
 
 @router.get("/api/shops")
