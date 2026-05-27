@@ -43,6 +43,13 @@
     transition: color .15s;
   }
   #back-link:hover { color: var(--text); }
+  #btn-logout {
+    margin-left: auto; flex-shrink: 0;
+    border: none; background: none; padding: 4px 0;
+    font-size: 11px; font-weight: 500; font-family: 'Inter', sans-serif;
+    color: var(--muted); cursor: pointer; letter-spacing: .3px; transition: color .15s;
+  }
+  #btn-logout:hover { color: #EF4444; }
   .topbar-logo {
     font-size: 15px; font-weight: 600; letter-spacing: -0.5px;
     background: linear-gradient(135deg, #0F0F0F 0%, #555 100%);
@@ -241,12 +248,26 @@
   .receipt-subtotal .warn { font-size: 10px; color: #F59E0B; font-weight: 400; }
 
   #cart-footer { padding: 12px 18px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  #btn-send-receipt {
+    width: 100%; padding: 11px; background: #0F0F0F; border: none;
+    color: #fff; font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+    cursor: pointer; letter-spacing: .5px; text-transform: uppercase; transition: opacity .15s;
+    margin-bottom: 8px; position: relative; overflow: hidden;
+  }
+  #btn-send-receipt::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, #3B82F6, #6366F1); opacity: 0; transition: opacity .3s;
+  }
+  #btn-send-receipt:hover:not(:disabled)::after { opacity: 1; }
+  #btn-send-receipt span { position: relative; z-index: 1; }
+  #btn-send-receipt:disabled { opacity: .3; cursor: not-allowed; }
   #btn-clear-cart {
     width: 100%; padding: 9px; background: none; border: 1px solid var(--border);
     color: var(--muted); font-size: 11px; font-weight: 500; font-family: 'Inter', sans-serif;
     cursor: pointer; letter-spacing: .3px; text-transform: uppercase; transition: all .15s;
   }
   #btn-clear-cart:hover { border-color: var(--red); color: var(--red); background: #FFF5F5; }
+  #send-status { font-size: 11px; text-align: center; margin-top: 8px; min-height: 16px; font-weight: 400; }
 </style>
 </head>
 <body>
@@ -260,6 +281,7 @@
   <div class="topbar-logo">GroceryScout</div>
   <div class="topbar-divider"></div>
   <div id="shops-chips"></div>
+  <button id="btn-logout" onclick="logout()">Вийти</button>
 </div>
 
 <div id="body-split">
@@ -300,12 +322,25 @@
       <div id="cart-receipts"></div>
     </div>
     <div id="cart-footer" style="display:none">
+      <button id="btn-send-receipt"><span id="btn-send-label">📧 Надіслати на пошту</span></button>
       <button id="btn-clear-cart">Очистити кошик</button>
+      <div id="send-status"></div>
     </div>
   </div>
 </div>
 
 <script>
+async function authFetch(url, options = {}) {
+  const res = await fetch(url, options);
+  if (res.status === 401) { window.location.href = "/login"; throw new Error("Unauthorized"); }
+  return res;
+}
+
+async function logout() {
+  await fetch("/api/auth/logout", { method: "POST" });
+  window.location.href = "/login";
+}
+
 const BRANDS = {
   atb:   { label: "АТБ",   chipClass: "chip-atb",   badgeClass: "badge-atb",   thBadge: "th-badge-atb"   },
   varus: { label: "Варус", chipClass: "chip-varus", badgeClass: "badge-varus", thBadge: "th-badge-varus" },
@@ -323,7 +358,7 @@ selectedShops.forEach(s => {
 
 const shopKey = s => `${s.brand}_${s.id}`;
 
-/* ── Cart state (unchanged) ── */
+/* ── Cart state ── */
 const cart = [];
 
 function cartHas(canonical) {
@@ -417,7 +452,60 @@ document.getElementById("btn-clear-cart").addEventListener("click", () => {
   renderResultButtons();
 });
 
-/* ── Search (unchanged) ── */
+document.getElementById("btn-send-receipt").addEventListener("click", async () => {
+  const receipts = computeReceipts();
+  if (!receipts.length) return;
+
+  const btn = document.getElementById("btn-send-receipt");
+  const label = document.getElementById("btn-send-label");
+  const statusEl = document.getElementById("send-status");
+
+  btn.disabled = true;
+  label.textContent = "Надсилаю…";
+  statusEl.style.color = "var(--muted)";
+  statusEl.textContent = "";
+
+  try {
+    const res = await authFetch("/api/send-receipt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        receipts: receipts.map(r => ({
+          shop_key: r.shopKey,
+          shop_name: r.shopName,
+          brand: r.brand,
+          total: r.total,
+          available_count: r.availableCount,
+          total_count: r.totalCount,
+          lines: r.lines.map(l => ({
+            canonical: l.canonical,
+            offer: l.offer ? {
+              name: l.offer.name,
+              actual_price: l.offer.actual_price,
+              price: l.offer.price,
+              special_price: l.offer.special_price ?? null,
+              image_url: l.offer.image_url ?? null,
+              url: l.offer.url ?? null,
+            } : null,
+          })),
+        })),
+        shop_ids: selectedShops.map(s => ({ brand: s.brand, id: s.id })),
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    statusEl.style.color = "#10B981";
+    statusEl.textContent = "✓ Відправлено на вашу пошту";
+    label.textContent = "📧 Надіслати на пошту";
+  } catch (err) {
+    statusEl.style.color = "var(--red)";
+    statusEl.textContent = "Помилка відправки";
+    label.textContent = "📧 Надіслати на пошту";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+/* ── Search ── */
 document.getElementById("query-input").addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
 document.getElementById("btn-search").addEventListener("click", doSearch);
 
@@ -437,7 +525,7 @@ async function doSearch() {
   clearPicks();
   try {
     setStatus("Шукаю товари…", true);
-    const searchRes = await fetch("/api/search", {
+    const searchRes = await authFetch("/api/search", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, shops: selectedShops.map(s => ({ id: s.id, brand: s.brand })) }),
     });
@@ -450,7 +538,7 @@ async function doSearch() {
       return;
     }
     setStatus("Класифікую результати…", true);
-    const matchRes = await fetch("/api/match", {
+    const matchRes = await authFetch("/api/match", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ results: searchData }),
     });
@@ -516,7 +604,6 @@ function renderResults(groups) {
   const table = document.createElement("table");
   table.id = "grid-table";
 
-  // thead
   const thead = document.createElement("thead");
   const headRow = document.createElement("tr");
   const thTitle = document.createElement("th");
@@ -535,7 +622,6 @@ function renderResults(groups) {
   thead.appendChild(headRow);
   table.appendChild(thead);
 
-  // one tbody per group
   groups.forEach(group => {
     const prices = selectedShops.map(s => group.offers[shopKey(s)]?.actual_price).filter(p => p != null);
     const minPrice = prices.length ? Math.min(...prices) : null;
@@ -543,7 +629,6 @@ function renderResults(groups) {
 
     const tbody = document.createElement("tbody");
 
-    // title row
     const trTitle = document.createElement("tr");
     const tdTitle = document.createElement("td");
     tdTitle.className = "group-title-td";
@@ -561,7 +646,6 @@ function renderResults(groups) {
     trTitle.appendChild(tdTitle);
     tbody.appendChild(trTitle);
 
-    // cards row
     const trCards = document.createElement("tr");
     trCards.appendChild(document.createElement("td"));
 
@@ -601,11 +685,9 @@ function renderResults(groups) {
         card.addEventListener("click", e => {
           if (e.target.classList.contains("offer-link")) return;
           if (picks[sk]?.offer === offer) {
-            // deselect
             delete picks[sk];
             card.classList.remove("selected");
           } else {
-            // deselect previous card in this column if any
             if (picks[sk]) {
               document.querySelectorAll(`.offer-card[data-sk="${sk}"]`).forEach(c => c.classList.remove("selected"));
             }
@@ -630,7 +712,7 @@ function renderResults(groups) {
   container.appendChild(table);
 }
 
-/* ── Utils (unchanged) ── */
+/* ── Utils ── */
 function plural(n, one = "", few = "и", many = "ів") {
   if (n % 10 === 1 && n % 100 !== 11) return one;
   if (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14)) return few;

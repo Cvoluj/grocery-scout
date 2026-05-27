@@ -3,6 +3,7 @@
 __pycache__
 
 pb_data/*
+pg_data/*
 
 settings.txt
 analogs.txt

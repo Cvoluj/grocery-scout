@@ -393,6 +393,24 @@ body {
   flex-shrink: 0;
 }
 
+#btn-logout {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  color: #C0C0C0;
+  font-size: 11px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: .3px;
+  text-align: center;
+  transition: color .15s;
+}
+#btn-logout:hover { color: #EF4444; }
+
 #btn-go {
   width: 100%;
   padding: 14px;
@@ -522,6 +540,7 @@ body {
 
   <div id="sidebar-footer">
     <button id="btn-go" disabled><span>Перейти до пошуку</span></button>
+    <button id="btn-logout" onclick="logout()">Вийти</button>
   </div>
 </div>
 
@@ -529,6 +548,17 @@ body {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
+async function authFetch(url, options = {}) {
+  const res = await fetch(url, options);
+  if (res.status === 401) { window.location.href = "/login"; throw new Error("Unauthorized"); }
+  return res;
+}
+
+async function logout() {
+  await fetch("/api/auth/logout", { method: "POST" });
+  window.location.href = "/login";
+}
+
 const BRANDS={
   atb:{label:"АТБ",color:"#F59E0B",badgeClass:"b-atb",btnOn:"on-atb"},
   varus:{label:"Варус",color:"#3B82F6",badgeClass:"b-varus",btnOn:"on-varus"},
@@ -613,9 +643,6 @@ function render(){
     if(visibleIds.has(s.id)){
       m.setIcon(makeIcon(s.brand,sel));
       if(!map.hasLayer(m))m.addTo(map);
-      const b=BRANDS[s.brand];
-      const dist=state.geoPos?haversineM(state.geoPos.lat,state.geoPos.lon,s.lat,s.lon):null;
-      // no popup
     }else{if(map.hasLayer(m))map.removeLayer(m);}
   });
 
@@ -735,7 +762,7 @@ document.getElementById("btn-go").addEventListener("click",()=>{
 });
 
 async function loadShops(){
-  const res=await fetch("/api/shops");
+  const res=await authFetch("/api/shops");
   state.shops=await res.json();
   initMarkers(state.shops);
   render();

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#F7F7F6;font-family:'Inter',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F7F6;padding:32px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+      <tr><td style="padding-bottom:24px;">
+        <div style="font-size:22px;font-weight:600;letter-spacing:-0.8px;color:#0F0F0F;">GroceryScout</div>
+        <div style="font-size:12px;color:#B0B0B0;margin-top:4px;">Ваш список покупок</div>
+      </td></tr>
+
+      <tr><td style="background:#0F0F0F;padding:16px 20px;margin-bottom:24px;">
+        <div style="color:#fff;font-size:12px;font-weight:300;">
+          {{ total_items }} {{ total_items | plural_uk('товар', 'товари', 'товарів') }} · {{ receipts | length }} {{ receipts | length | plural_uk('магазин', 'магазини', 'магазинів') }}
+        </div>
+        <div style="color:#B0B0B0;font-size:11px;margin-top:4px;">Чеки відсортовані за пріоритетом: повний кошик → найдешевше</div>
+      </td></tr>
+
+      <tr><td style="padding-top:24px;">
+        {% for r in receipts %}
+        {% set brand = BRANDS[r.data.brand] %}
+        {% set maps_url = r | maps_url %}
+        {% set missing = r.data.total_count - r.data.available_count %}
+
+        <div style="background:#fff;border:1px solid #EBEBEB;margin-bottom:24px;{% if r.is_best %}border-top:3px solid #10B981;{% endif %}">
+
+          <div style="padding:16px 20px;border-bottom:1px solid #F0F0F0;">
+            <div style="margin-bottom:8px;">
+              <span style="background:{{ brand.bg }};color:{{ brand.color }};font-size:9px;font-weight:700;padding:2px 7px;letter-spacing:.5px;text-transform:uppercase;">{{ brand.label }}</span>
+              {% if r.is_best %}
+                <span style="background:#10B981;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;letter-spacing:.5px;text-transform:uppercase;margin-left:6px;">★ НАЙКРАЩИЙ КОШИК</span>
+              {% elif missing > 0 %}
+                <span style="background:#FEF3C7;color:#92400E;font-size:10px;font-weight:700;padding:3px 8px;letter-spacing:.5px;text-transform:uppercase;margin-left:6px;">⚠ НЕПОВНИЙ · {{ missing }} немає</span>
+              {% else %}
+                <span style="background:#F0FFF8;color:#10B981;font-size:10px;font-weight:700;padding:3px 8px;letter-spacing:.5px;text-transform:uppercase;margin-left:6px;">✓ ПОВНИЙ КОШИК</span>
+              {% endif %}
+            </div>
+            <div style="font-size:15px;font-weight:600;color:#0F0F0F;margin-bottom:4px;">
+              <a href="{{ maps_url }}" style="color:#0F0F0F;text-decoration:none;">{{ r.data.shop_name }}</a>
+            </div>
+            <div style="font-size:12px;color:#888;font-weight:300;">
+              <a href="{{ maps_url }}" style="color:#3B82F6;text-decoration:none;">📍 {{ r.data.shop_name }}</a>
+            </div>
+          </div>
+
+          <div style="padding:0 20px;">
+            <table style="width:100%;border-collapse:collapse;">
+              {% for line in r.data.lines %}
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid #F5F5F4;width:56px;vertical-align:top;">
+                  {% if line.offer and line.offer.image_url %}
+                    <img src="{{ line.offer.image_url }}" width="48" height="48" style="object-fit:contain;background:#FAFAF8;display:block;" alt=""/>
+                  {% else %}
+                    <div style="width:48px;height:48px;background:#F5F4F0;display:flex;align-items:center;justify-content:center;font-size:20px;">🛒</div>
+                  {% endif %}
+                </td>
+                <td style="padding:10px 0 10px 12px;border-bottom:1px solid #F5F5F4;vertical-align:top;">
+                  {% if line.offer %}
+                    {% if line.offer.url %}
+                      <a href="{{ line.offer.url }}" style="color:#3B82F6;text-decoration:none;font-size:12px;font-weight:500;">{{ line.offer.name }}</a>
+                    {% else %}
+                      <span style="font-size:12px;color:#333;">{{ line.offer.name }}</span>
+                    {% endif %}
+                  {% else %}
+                    <div style="font-size:12px;color:#888;font-weight:300;">{{ line.canonical }}</div>
+                    <div style="font-size:11px;color:#B0B0B0;font-style:italic;margin-top:2px;">Немає в цьому магазині</div>
+                  {% endif %}
+                </td>
+                <td style="padding:10px 0;border-bottom:1px solid #F5F5F4;text-align:right;vertical-align:top;white-space:nowrap;">
+                  {% if line.offer %}
+                    {% if line.offer.special_price is not none %}
+                      <span style="font-size:14px;font-weight:700;color:#EF4444;">{{ "%.2f"|format(line.offer.actual_price) }} грн</span>
+                      <br><span style="font-size:11px;color:#B0B0B0;text-decoration:line-through;">{{ "%.2f"|format(line.offer.price) }} грн</span>
+                    {% else %}
+                      <span style="font-size:14px;font-weight:700;color:#0F0F0F;">{{ "%.2f"|format(line.offer.actual_price) }} грн</span>
+                    {% endif %}
+                  {% else %}
+                    <span style="font-size:13px;color:#C0C0C0;">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </table>
+          </div>
+
+          <div style="padding:14px 20px;border-top:1px solid #EBEBEB;">
+            <span style="font-size:11px;color:#B0B0B0;">{{ r.data.available_count }} з {{ r.data.total_count }} товарів</span>
+            <span style="font-size:16px;font-weight:700;color:{% if r.is_best %}#10B981{% else %}#0F0F0F{% endif %};float:right;">{{ "%.2f"|format(r.data.total) }} грн</span>
+          </div>
+
+        </div>
+        {% endfor %}
+      </td></tr>
+
+      <tr><td style="padding-top:16px;border-top:1px solid #EBEBEB;">
+        <div style="font-size:11px;color:#C0C0C0;">Надіслано на {{ user_email }} · GroceryScout</div>
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>

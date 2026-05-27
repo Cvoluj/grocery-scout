@@ -1,9 +1,11 @@
 import asyncio
 
+import asyncpg
 from curl_cffi import AsyncSession
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from libs.pb_client import runtime
+from src.auth.deps import get_current_user
 from src.schemas.search import MatchRequest, SearchRequest
 from src.store_data import atb_by_id, varus_by_id
 from src.tasks import search_atb_task, search_varus_task
@@ -12,7 +14,7 @@ router = APIRouter(prefix="/api")
 
 
 @router.post("/search")
-async def search(req: SearchRequest):
+async def search(req: SearchRequest, _: asyncpg.Record = Depends(get_current_user)):
     atb = [atb_by_id[s.id] for s in req.shops if s.brand == "atb" and s.id in atb_by_id]
     varus = [varus_by_id[s.id] for s in req.shops if s.brand == "varus" and s.id in varus_by_id]
 
@@ -25,7 +27,7 @@ async def search(req: SearchRequest):
 
 
 @router.post("/match")
-async def match(req: MatchRequest):
+async def match(req: MatchRequest, _: asyncpg.Record = Depends(get_current_user)):
     shops = [
         {
             "shop_id": shop.shop_id,

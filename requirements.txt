@@ -7,3 +7,10 @@ taskiq
 taskiq-redis
 taskiq-fastapi
 uvicorn
+fastapi
+asyncpg
+PyJWT
+passlib[bcrypt]
+bcrypt==4.0.1
+pydantic[email]
+aiosmtplib
