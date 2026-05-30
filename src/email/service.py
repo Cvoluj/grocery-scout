@@ -7,6 +7,7 @@ from email.mime.text import MIMEText
 import aiosmtplib
 from jinja2 import Environment, FileSystemLoader
 
+from src.brands import registry
 from src.settings import TEMPLATES_DIR
 from src.email.schemas import ReceiptData
 load_dotenv()
@@ -17,11 +18,6 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SMTP_FROM = os.getenv("SMTP_FROM")
-
-BRANDS: dict[str, dict] = {
-    "atb":   {"label": "АТБ",   "bg": "#FEF3C7", "color": "#92400E"},
-    "varus": {"label": "Варус", "bg": "#DBEAFE", "color": "#1E40AF"},
-}
 
 
 def _make_jinja_env() -> Environment:
@@ -64,7 +60,7 @@ def build_html(receipts: list[EnrichedReceipt], user_email: str) -> str:
         receipts=receipts,
         user_email=user_email,
         total_items=total_items,
-        BRANDS=BRANDS,
+        BRANDS=registry.email_brands(),
     )
 
 

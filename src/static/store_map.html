@@ -6,488 +6,9 @@
 <title>GroceryScout</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
-:root {
-  --atb: #F59E0B;
-  --varus: #3B82F6;
-  --green: #10B981;
-  --w: 360px;
-}
-
-body {
-  font-family: 'Inter', sans-serif;
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-  background: #fff;
-}
-
-#sidebar {
-  width: var(--w);
-  flex-shrink: 0;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid #F0F0F0;
-  position: relative;
-  z-index: 10;
-}
-
-#top {
-  padding: 28px 28px 0;
-  flex-shrink: 0;
-}
-
-.logo {
-  margin-bottom: 28px;
-}
-
-.logo-name {
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.8px;
-  background: linear-gradient(135deg, #0F0F0F 0%, #555 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  line-height: 1;
-}
-
-.logo-sub {
-  font-size: 11px;
-  color: #B0B0B0;
-  font-weight: 400;
-  margin-top: 4px;
-  letter-spacing: 0.1px;
-}
-
-#brands {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.brand-btn {
-  flex: 1;
-  padding: 10px 0;
-  border: none;
-  border-radius: 0;
-  font-size: 11px;
-  font-weight: 600;
-  font-family: 'Inter', sans-serif;
-  cursor: pointer;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  transition: all 0.2s;
-  position: relative;
-  background: transparent;
-  color: #C0C0C0;
-  border-bottom: 2px solid transparent;
-}
-
-.brand-btn.on-atb {
-  color: var(--atb);
-  border-bottom-color: var(--atb);
-}
-
-.brand-btn.on-varus {
-  color: var(--varus);
-  border-bottom-color: var(--varus);
-}
-
-.brand-btn.off {
-  opacity: 0.3;
-}
-
-.search-wrap {
-  position: relative;
-}
-
-.search-wrap input {
-  width: 100%;
-  padding: 12px 16px 12px 40px;
-  border: none;
-  border-bottom: 1px solid #EBEBEB;
-  border-radius: 0;
-  font-size: 13px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 400;
-  color: #0F0F0F;
-  outline: none;
-  background: transparent;
-  transition: border-color 0.2s;
-}
-
-.search-wrap input::placeholder { color: #C0C0C0; }
-.search-wrap input:focus { border-bottom-color: #0F0F0F; }
-
-.search-ico {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #C0C0C0;
-  pointer-events: none;
-}
-
-#divider { height: 1px; background: linear-gradient(90deg, #F0F0F0, #E8E8E8, #F0F0F0); margin: 20px 0 0; flex-shrink: 0; }
-
-#geo-panel {
-  padding: 16px 28px;
-  border-bottom: 1px solid #F5F5F5;
-  flex-shrink: 0;
-}
-
-.panel-label {
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: #C0C0C0;
-  margin-bottom: 12px;
-}
-
-#btn-geo {
-  width: 100%;
-  padding: 11px 0;
-  border: none;
-  border-bottom: 1px solid #EBEBEB;
-  background: transparent;
-  color: #888;
-  font-size: 12px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
-  margin-bottom: 14px;
-  text-align: left;
-}
-
-#btn-geo:hover { color: #0F0F0F; border-bottom-color: #0F0F0F; }
-
-#btn-geo.active {
-  color: var(--green);
-  border-bottom-color: var(--green);
-}
-
-.radius-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.radius-row label {
-  font-size: 10px;
-  color: #C0C0C0;
-  white-space: nowrap;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  min-width: 40px;
-}
-
-.radius-row input[type=range] {
-  flex: 1;
-  height: 1px;
-  -webkit-appearance: none;
-  background: linear-gradient(90deg, #0F0F0F var(--pct,10%), #E8E8E8 var(--pct,10%));
-  border-radius: 0;
-  outline: none;
-  cursor: pointer;
-}
-
-.radius-row input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #0F0F0F;
-  cursor: pointer;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px #0F0F0F;
-}
-
-#radius-val {
-  font-size: 11px;
-  font-weight: 600;
-  color: #0F0F0F;
-  min-width: 36px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-#geo-hint {
-  font-size: 11px;
-  color: var(--green);
-  margin-top: 10px;
-  display: none;
-  font-weight: 500;
-}
-
-#list-meta {
-  padding: 12px 28px 4px;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  flex-shrink: 0;
-}
-
-.meta-l {
-  font-size: 11px;
-  color: #C0C0C0;
-  font-weight: 400;
-}
-
-.meta-r {
-  font-size: 12px;
-  font-weight: 600;
-  background: linear-gradient(135deg, var(--varus), #6366F1);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.list-acts {
-  display: flex;
-  gap: 0;
-  padding: 4px 28px 10px;
-  flex-shrink: 0;
-}
-
-.act-btn {
-  font-size: 11px;
-  padding: 4px 0;
-  border: none;
-  background: none;
-  color: #C0C0C0;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  transition: color 0.15s;
-  margin-right: 14px;
-}
-
-.act-btn:hover { color: #0F0F0F; }
-
-#store-list {
-  flex: 1;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
-#store-list::-webkit-scrollbar { display: none; }
-
-.store-row {
-  padding: 12px 28px;
-  cursor: pointer;
-  border-bottom: 1px solid #F8F8F8;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  transition: background 0.1s;
-  user-select: none;
-}
-
-.store-row:hover { background: #FAFAFA; }
-
-.store-row.sel {
-  background: linear-gradient(90deg, #F0F7FF, #F8F8FF);
-  border-bottom-color: #EBF3FF;
-}
-
-.row-check {
-  width: 14px;
-  height: 14px;
-  border: 1.5px solid #DEDEDE;
-  border-radius: 3px;
-  flex-shrink: 0;
-  margin-top: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-}
-
-.store-row.sel .row-check {
-  border-color: var(--varus);
-  background: var(--varus);
-}
-
-.chk { display: none; }
-.store-row.sel .chk { display: block; }
-
-.row-b { flex: 1; min-width: 0; }
-
-.row-top {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-bottom: 2px;
-}
-
-.badge {
-  font-size: 9px;
-  font-weight: 600;
-  padding: 2px 5px;
-  border-radius: 2px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  flex-shrink: 0;
-}
-
-.b-atb { background: #FEF3C7; color: #92400E; }
-.b-varus { background: #DBEAFE; color: #1E40AF; }
-
-.row-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: #0F0F0F;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-  letter-spacing: -0.1px;
-}
-
-.row-addr {
-  font-size: 11px;
-  color: #B0B0B0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 300;
-}
-
-.row-dist {
-  font-size: 10px;
-  font-weight: 600;
-  background: linear-gradient(90deg, var(--varus), #6366F1);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-top: 3px;
-}
-
-.row-time { font-size: 10px; color: #D0D0D0; margin-top: 1px; font-weight: 300; }
-
-.empty-msg {
-  padding: 48px 28px;
-  text-align: center;
-  color: #C0C0C0;
-  font-size: 13px;
-  line-height: 1.7;
-  font-weight: 300;
-}
-
-.empty-msg strong { display: block; color: #888; font-weight: 500; margin-bottom: 4px; font-size: 14px; }
-
-#sidebar-footer {
-  padding: 16px 28px;
-  border-top: 1px solid #F0F0F0;
-  background: #fff;
-  flex-shrink: 0;
-}
-
-#btn-logout {
-  display: block;
-  width: 100%;
-  margin-top: 10px;
-  padding: 8px 0;
-  border: none;
-  background: none;
-  color: #C0C0C0;
-  font-size: 11px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  cursor: pointer;
-  letter-spacing: .3px;
-  text-align: center;
-  transition: color .15s;
-}
-#btn-logout:hover { color: #EF4444; }
-
-#btn-go {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  border-radius: 0;
-  background: linear-gradient(135deg, #0F0F0F 0%, #2D2D2D 100%);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  font-family: 'Inter', sans-serif;
-  cursor: pointer;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  transition: opacity 0.15s, transform 0.1s;
-  position: relative;
-  overflow: hidden;
-}
-
-#btn-go::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, var(--varus), #6366F1);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-#btn-go:hover:not(:disabled)::after { opacity: 1; }
-#btn-go:hover:not(:disabled) span { position: relative; z-index: 1; }
-#btn-go:active:not(:disabled) { transform: scale(0.99); }
-#btn-go:disabled { opacity: 0.2; cursor: not-allowed; }
-#btn-go span { position: relative; z-index: 1; }
-
-#map { flex: 1; z-index: 1; min-width: 0; }
-
-.leaflet-popup-content-wrapper {
-  border-radius: 0 !important;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.12) !important;
-  border: none !important;
-  border-top: 3px solid var(--varus) !important;
-}
-
-.leaflet-popup-content { margin: 14px 18px !important; font-family: 'Inter', sans-serif; }
-.leaflet-popup-tip-container { display: none; }
-
-.popup-badge {
-  display: inline-block;
-  font-size: 9px;
-  font-weight: 600;
-  padding: 2px 5px;
-  border-radius: 2px;
-  margin-bottom: 7px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.popup-name { font-size: 13px; font-weight: 600; color: #0F0F0F; margin-bottom: 4px; line-height: 1.4; letter-spacing: -0.2px; }
-.popup-addr { font-size: 11px; color: #888; font-weight: 300; }
-.popup-dist { font-size: 11px; font-weight: 600; background: linear-gradient(90deg, var(--varus), #6366F1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-top: 6px; }
-
-.leaflet-control-zoom {
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
-}
-
-.leaflet-control-zoom a {
-  color: #0F0F0F !important;
-  background: #fff !important;
-  border-bottom: 1px solid #F0F0F0 !important;
-  font-weight: 300 !important;
-}
-
-.leaflet-control-zoom a:hover { background: #FAFAFA !important; }
-</style>
+<link rel="stylesheet" href="/static/css/styles.css"/>
 </head>
-<body>
+<body style="display:flex;height:100vh;overflow:hidden;background:#fff;font-family:'Inter',sans-serif;">
 
 <div id="sidebar">
   <div id="top">
@@ -495,9 +16,7 @@ body {
       <div class="logo-name">GroceryScout</div>
       <div class="logo-sub">Знайди та порівняй ціни</div>
     </div>
-
     <div id="brands"></div>
-
     <div class="search-wrap">
       <svg class="search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -559,145 +78,147 @@ async function logout() {
   window.location.href = "/login";
 }
 
-const BRANDS={
-  atb:{label:"АТБ",color:"#F59E0B",badgeClass:"b-atb",btnOn:"on-atb"},
-  varus:{label:"Варус",color:"#3B82F6",badgeClass:"b-varus",btnOn:"on-varus"},
+const BRANDS = {
+  atb:   { label: "АТБ",   color: "#1E3A8A", badgeClass: "b-atb",   btnOn: "on-atb"   },
+  varus: { label: "Варус", color: "#EA6C00", badgeClass: "b-varus", btnOn: "on-varus" },
+  fora:  { label: "Фора",  color: "#16A34A", badgeClass: "b-fora",  btnOn: "on-fora"  },
 };
 
-const state={shops:[],activeBrands:new Set(["atb","varus"]),filterQuery:"",selectedIds:new Set(),geoPos:null,radiusM:500};
+const state = { shops: [], activeBrands: new Set(Object.keys(BRANDS)), filterQuery: "", selectedIds: new Set(), geoPos: null, radiusM: 500 };
 
-const map=L.map("map",{zoomControl:false}).setView([50.45,30.52],12);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{maxZoom:19,attribution:"© CARTO"}).addTo(map);
-L.control.zoom({position:"bottomright"}).addTo(map);
+const map = L.map("map", { zoomControl: false }).setView([50.45, 30.52], 12);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", { maxZoom: 19, attribution: "© CARTO" }).addTo(map);
+L.control.zoom({ position: "bottomright" }).addTo(map);
 
-let radiusCircle=null,geoMarker=null;
+let radiusCircle = null, geoMarker = null;
 
-function setGeoLayer(pos,r){
-  if(radiusCircle){map.removeLayer(radiusCircle);radiusCircle=null;}
-  if(geoMarker){map.removeLayer(geoMarker);geoMarker=null;}
-  if(!pos)return;
-  const ll=[pos.lat,pos.lon];
-  radiusCircle=L.circle(ll,{radius:r,color:"#3B82F6",fillColor:"#3B82F6",fillOpacity:0.05,weight:1,dashArray:"3 6"}).addTo(map);
-  geoMarker=L.circleMarker(ll,{radius:5,color:"#3B82F6",fillColor:"#fff",fillOpacity:1,weight:2}).addTo(map);
+function setGeoLayer(pos, r) {
+  if (radiusCircle) { map.removeLayer(radiusCircle); radiusCircle = null; }
+  if (geoMarker) { map.removeLayer(geoMarker); geoMarker = null; }
+  if (!pos) return;
+  const ll = [pos.lat, pos.lon];
+  radiusCircle = L.circle(ll, { radius: r, color: "#3B82F6", fillColor: "#3B82F6", fillOpacity: 0.05, weight: 1, dashArray: "3 6" }).addTo(map);
+  geoMarker = L.circleMarker(ll, { radius: 5, color: "#3B82F6", fillColor: "#fff", fillOpacity: 1, weight: 2 }).addTo(map);
 }
 
-function makeIcon(brand,sel){
-  const c=BRANDS[brand].color;
-  const l=BRANDS[brand].label[0];
-  const s=sel?32:26;
-  const h=Math.round(s*1.3);
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${h}" viewBox="0 0 26 34">
-    <path d="M13 0C5.8 0 0 5.8 0 13c0 9.8 13 21 13 21S26 22.8 26 13C26 5.8 20.2 0 13 0z" fill="${sel?"#0F0F0F":c}"/>
-    <circle cx="13" cy="13" r="8" fill="${sel?c:"#fff"}"/>
-    <text x="13" y="17" text-anchor="middle" font-size="10" font-weight="600" fill="${sel?"#0F0F0F":c}" font-family="Inter,sans-serif">${l}</text>
+function makeIcon(brand, sel) {
+  const c = BRANDS[brand].color;
+  const l = BRANDS[brand].label[0];
+  const s = sel ? 32 : 26;
+  const h = Math.round(s * 1.3);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${h}" viewBox="0 0 26 34">
+    <path d="M13 0C5.8 0 0 5.8 0 13c0 9.8 13 21 13 21S26 22.8 26 13C26 5.8 20.2 0 13 0z" fill="${sel ? "#0F0F0F" : c}"/>
+    <circle cx="13" cy="13" r="8" fill="${sel ? c : "#fff"}"/>
+    <text x="13" y="17" text-anchor="middle" font-size="10" font-weight="600" fill="${sel ? "#0F0F0F" : c}" font-family="Inter,sans-serif">${l}</text>
   </svg>`;
-  return L.icon({iconUrl:"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg),iconSize:[s,h],iconAnchor:[s/2,h],popupAnchor:[0,-h-2]});
+  return L.icon({ iconUrl: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg), iconSize: [s, h], iconAnchor: [s / 2, h], popupAnchor: [0, -h - 2] });
 }
 
-const markers={};
+const markers = {};
 
-function initMarkers(shops){
-  shops.forEach(s=>{
-    const m=L.marker([s.lat,s.lon],{icon:makeIcon(s.brand,false)});
-    m.on("click",()=>toggleSelect(s.id));
-    markers[s.id]=m;
+function initMarkers(shops) {
+  shops.forEach(s => {
+    const m = L.marker([s.lat, s.lon], { icon: makeIcon(s.brand, false) });
+    m.on("click", () => toggleSelect(s.id));
+    markers[s.id] = m;
   });
 }
 
-function haversineM(lat1,lon1,lat2,lon2){
-  const R=6371000,r=Math.PI/180;
-  const dLat=(lat2-lat1)*r,dLon=(lon2-lon1)*r;
-  const a=Math.sin(dLat/2)**2+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+function haversineM(lat1, lon1, lat2, lon2) {
+  const R = 6371000, r = Math.PI / 180;
+  const dLat = (lat2 - lat1) * r, dLon = (lon2 - lon1) * r;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function fmtDist(m){return m<1000?Math.round(m)+"м":(m/1000).toFixed(1)+"км";}
-function plural(n){if(n%10===1&&n%100!==11)return"";if(n%10>=2&&n%10<=4&&!(n%100>=12&&n%100<=14))return"и";return"ів";}
-function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function fmtDist(m) { return m < 1000 ? Math.round(m) + "м" : (m / 1000).toFixed(1) + "км"; }
+function plural(n) { if (n % 10 === 1 && n % 100 !== 11) return ""; if (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14)) return "и"; return "ів"; }
+function esc(s) { return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-function updateSliderGradient(){
-  const sl=document.getElementById("radius-slider");
-  const pct=((sl.value-sl.min)/(sl.max-sl.min)*100).toFixed(1)+"%";
-  sl.style.setProperty("--pct",pct);
+function updateSliderGradient() {
+  const sl = document.getElementById("radius-slider");
+  const pct = ((sl.value - sl.min) / (sl.max - sl.min) * 100).toFixed(1) + "%";
+  sl.style.setProperty("--pct", pct);
 }
 
-function getVisible(){
-  const q=state.filterQuery.toLowerCase();
+function getVisible() {
+  const q = state.filterQuery.toLowerCase();
   return state.shops
-    .filter(s=>{
-      if(!state.activeBrands.has(s.brand))return false;
-      if(q&&!s.short_name.toLowerCase().includes(q)&&!s.address.toLowerCase().includes(q))return false;
+    .filter(s => {
+      if (!state.activeBrands.has(s.brand)) return false;
+      if (q && !s.short_name.toLowerCase().includes(q) && !s.address.toLowerCase().includes(q)) return false;
       return true;
     })
-    .map(s=>({...s,dist:state.geoPos?haversineM(state.geoPos.lat,state.geoPos.lon,s.lat,s.lon):null}))
-    .sort((a,b)=>(a.dist??Infinity)-(b.dist??Infinity));
+    .map(s => ({ ...s, dist: state.geoPos ? haversineM(state.geoPos.lat, state.geoPos.lon, s.lat, s.lon) : null }))
+    .sort((a, b) => (a.dist ?? Infinity) - (b.dist ?? Infinity));
 }
 
-function render(){
-  const visible=getVisible();
-  const visibleIds=new Set(visible.map(s=>s.id));
+function render() {
+  const visible = getVisible();
+  const visibleIds = new Set(visible.map(s => s.id));
 
-  state.shops.forEach(s=>{
-    const m=markers[s.id];if(!m)return;
-    const sel=state.selectedIds.has(s.id);
-    if(visibleIds.has(s.id)){
-      m.setIcon(makeIcon(s.brand,sel));
-      if(!map.hasLayer(m))m.addTo(map);
-    }else{if(map.hasLayer(m))map.removeLayer(m);}
+  state.shops.forEach(s => {
+    const m = markers[s.id]; if (!m) return;
+    const sel = state.selectedIds.has(s.id);
+    if (visibleIds.has(s.id)) {
+      m.setIcon(makeIcon(s.brand, sel));
+      if (!map.hasLayer(m)) m.addTo(map);
+    } else { if (map.hasLayer(m)) map.removeLayer(m); }
   });
 
-  document.getElementById("count").textContent=visible.length;
-  const n=state.selectedIds.size;
-  document.getElementById("sel-count").textContent=n;
+  document.getElementById("count").textContent = visible.length;
+  const n = state.selectedIds.size;
+  document.getElementById("sel-count").textContent = n;
 
-  const btn=document.getElementById("btn-go");
-  btn.disabled=n===0;
-  btn.querySelector("span").textContent=n===0?"Перейти до пошуку":`Далі — ${n} магазин${plural(n)}`;
+  const btn = document.getElementById("btn-go");
+  btn.disabled = n === 0;
+  btn.querySelector("span").textContent = n === 0 ? "Перейти до пошуку" : `Далі — ${n} магазин${plural(n)}`;
 
-  const CHK=`<svg class="chk" width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2.5"><polyline points="1.5,5 4,7.5 8.5,2"/></svg>`;
-  const list=document.getElementById("store-list");
+  const CHK = `<svg class="chk" width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2.5"><polyline points="1.5,5 4,7.5 8.5,2"/></svg>`;
+  const list = document.getElementById("store-list");
 
-  if(!visible.length){
-    list.innerHTML=`<div class="empty-msg"><strong>Нічого не знайдено</strong>Спробуйте змінити фільтри</div>`;
+  if (!visible.length) {
+    list.innerHTML = `<div class="empty-msg"><strong>Нічого не знайдено</strong>Спробуйте змінити фільтри</div>`;
     return;
   }
 
-  list.innerHTML=visible.map(s=>{
-    const b=BRANDS[s.brand];const sel=state.selectedIds.has(s.id);
-    return`<div class="store-row${sel?" sel":""}" data-id="${s.id}">
+  list.innerHTML = visible.map(s => {
+    const b = BRANDS[s.brand]; const sel = state.selectedIds.has(s.id);
+    return `<div class="store-row${sel ? " sel" : ""}" data-id="${s.id}">
       <div class="row-check">${CHK}</div>
       <div class="row-b">
         <div class="row-top">
           <span class="badge ${b.badgeClass}">${b.label}</span>
-          <span class="row-name">${esc(s.short_name)}</span>
+          <span class="row-name">${esc(s.address)}</span>
+          <span style="display:none">${esc(s.short_name)}</span>
         </div>
         <div class="row-addr">${esc(s.address)}</div>
-        ${s.worktime?`<div class="row-time">${esc(s.worktime)}</div>`:""}
-        ${s.dist!==null?`<div class="row-dist">${fmtDist(s.dist)}</div>`:""}
+        ${s.worktime ? `<div class="row-time">${esc(s.worktime)}</div>` : ""}
+        ${s.dist !== null ? `<div class="row-dist">${fmtDist(s.dist)}</div>` : ""}
       </div>
     </div>`;
   }).join("");
 
-  list.querySelectorAll(".store-row").forEach(el=>el.addEventListener("click",()=>toggleSelect(+el.dataset.id)));
+  list.querySelectorAll(".store-row").forEach(el => el.addEventListener("click", () => toggleSelect(+el.dataset.id)));
 }
 
-function toggleSelect(id){
-  if(state.selectedIds.has(id))state.selectedIds.delete(id);
+function toggleSelect(id) {
+  if (state.selectedIds.has(id)) state.selectedIds.delete(id);
   else state.selectedIds.add(id);
   render();
 }
 
-Object.entries(BRANDS).forEach(([key,b])=>{
-  const btn=document.createElement("button");
-  btn.className=`brand-btn ${b.btnOn}`;
-  btn.textContent=b.label;
-  btn.addEventListener("click",()=>{
-    if(state.activeBrands.has(key)){
-      if(state.activeBrands.size===1)return;
+Object.entries(BRANDS).forEach(([key, b]) => {
+  const btn = document.createElement("button");
+  btn.className = `brand-btn ${b.btnOn}`;
+  btn.textContent = b.label;
+  btn.addEventListener("click", () => {
+    if (state.activeBrands.has(key)) {
+      if (state.activeBrands.size === 1) return;
       state.activeBrands.delete(key);
       btn.classList.add("off");
       btn.classList.remove(b.btnOn);
-    }else{
+    } else {
       state.activeBrands.add(key);
       btn.classList.remove("off");
       btn.classList.add(b.btnOn);
@@ -707,63 +228,63 @@ Object.entries(BRANDS).forEach(([key,b])=>{
   document.getElementById("brands").appendChild(btn);
 });
 
-document.getElementById("filter-input").addEventListener("input",e=>{state.filterQuery=e.target.value;render();});
-document.getElementById("btn-sel-visible").addEventListener("click",()=>{getVisible().forEach(s=>state.selectedIds.add(s.id));render();});
-document.getElementById("btn-clear-sel").addEventListener("click",()=>{state.selectedIds.clear();render();});
+document.getElementById("filter-input").addEventListener("input", e => { state.filterQuery = e.target.value; render(); });
+document.getElementById("btn-sel-visible").addEventListener("click", () => { getVisible().forEach(s => state.selectedIds.add(s.id)); render(); });
+document.getElementById("btn-clear-sel").addEventListener("click", () => { state.selectedIds.clear(); render(); });
 
-const btnGeo=document.getElementById("btn-geo");
-const slider=document.getElementById("radius-slider");
-const radiusVal=document.getElementById("radius-val");
-const geoHint=document.getElementById("geo-hint");
+const btnGeo = document.getElementById("btn-geo");
+const slider = document.getElementById("radius-slider");
+const radiusVal = document.getElementById("radius-val");
+const geoHint = document.getElementById("geo-hint");
 
 updateSliderGradient();
-slider.addEventListener("input",()=>{
-  state.radiusM=+slider.value;
-  radiusVal.textContent=state.radiusM<1000?state.radiusM+"м":(state.radiusM/1000).toFixed(1)+"км";
+slider.addEventListener("input", () => {
+  state.radiusM = +slider.value;
+  radiusVal.textContent = state.radiusM < 1000 ? state.radiusM + "м" : (state.radiusM / 1000).toFixed(1) + "км";
   updateSliderGradient();
-  if(state.geoPos)applyGeo();
+  if (state.geoPos) applyGeo();
 });
 
-function applyGeo(){
-  if(!state.geoPos)return;
-  setGeoLayer(state.geoPos,state.radiusM);
-  let count=0;
-  state.shops.forEach(s=>{
-    const d=haversineM(state.geoPos.lat,state.geoPos.lon,s.lat,s.lon);
-    if(d<=state.radiusM){state.selectedIds.add(s.id);count++;}
+function applyGeo() {
+  if (!state.geoPos) return;
+  setGeoLayer(state.geoPos, state.radiusM);
+  let count = 0;
+  state.shops.forEach(s => {
+    const d = haversineM(state.geoPos.lat, state.geoPos.lon, s.lat, s.lon);
+    if (d <= state.radiusM) { state.selectedIds.add(s.id); count++; }
   });
-  geoHint.textContent=`${count} магазин${plural(count)} у радіусі ${fmtDist(state.radiusM)}`;
-  geoHint.style.display="block";
+  geoHint.textContent = `${count} магазин${plural(count)} у радіусі ${fmtDist(state.radiusM)}`;
+  geoHint.style.display = "block";
   render();
 }
 
-btnGeo.addEventListener("click",()=>{
-  if(!navigator.geolocation){alert("Геолокація не підтримується");return;}
-  btnGeo.textContent="Визначаю…";
-  navigator.geolocation.getCurrentPosition(pos=>{
-    state.geoPos={lat:pos.coords.latitude,lon:pos.coords.longitude};
+btnGeo.addEventListener("click", () => {
+  if (!navigator.geolocation) { alert("Геолокація не підтримується"); return; }
+  btnGeo.textContent = "Визначаю…";
+  navigator.geolocation.getCurrentPosition(pos => {
+    state.geoPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
     btnGeo.classList.add("active");
-    btnGeo.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> Геопозиція активна`;
-    map.setView([state.geoPos.lat,state.geoPos.lon],14,{animate:true});
+    btnGeo.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> Геопозиція активна`;
+    map.setView([state.geoPos.lat, state.geoPos.lon], 14, { animate: true });
     applyGeo();
-  },()=>{
-    btnGeo.textContent="Визначити моє місцезнаходження";
+  }, () => {
+    btnGeo.textContent = "Визначити моє місцезнаходження";
     alert("Не вдалося отримати геопозицію");
   });
 });
 
-document.getElementById("btn-go").addEventListener("click",()=>{
-  const selected=[...state.selectedIds].map(id=>{
-    const s=state.shops.find(x=>x.id===id);
-    return{id:s.id,brand:s.brand,name:s.short_name,address:s.address};
+document.getElementById("btn-go").addEventListener("click", () => {
+  const selected = [...state.selectedIds].map(id => {
+    const s = state.shops.find(x => x.id === id);
+    return { id: s.id, brand: s.brand, name: s.short_name, address: s.address };
   });
-  localStorage.setItem("selected_shops",JSON.stringify(selected));
-  window.location.href="/checkout";
+  localStorage.setItem("selected_shops", JSON.stringify(selected));
+  window.location.href = "/checkout";
 });
 
-async function loadShops(){
-  const res=await authFetch("/api/shops");
-  state.shops=await res.json();
+async function loadShops() {
+  const res = await authFetch("/api/shops");
+  state.shops = await res.json();
   initMarkers(state.shops);
   render();
 }

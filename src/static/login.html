@@ -5,35 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>GroceryScout — Вхід</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--varus:#3B82F6;--green:#10B981;--red:#EF4444;--border:#EBEBEB}
-body{font-family:'Inter',sans-serif;background:#F7F7F6;display:flex;align-items:center;justify-content:center;min-height:100vh}
-
-.card{background:#fff;border:1px solid var(--border);width:100%;max-width:380px;padding:40px 36px}
-
-.logo-name{font-size:20px;font-weight:600;letter-spacing:-0.8px;background:linear-gradient(135deg,#0F0F0F 0%,#555 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
-.logo-sub{font-size:11px;color:#B0B0B0;font-weight:400;margin-top:4px;letter-spacing:.1px}
-.logo{margin-bottom:32px}
-
-.tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--border)}
-.tab{flex:1;padding:10px 0;border:none;background:none;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;color:#C0C0C0;border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:.3px;text-transform:uppercase;transition:all .15s}
-.tab.active{color:#0F0F0F;border-bottom-color:#0F0F0F}
-
-.field{margin-bottom:16px}
-.field label{display:block;font-size:10px;font-weight:600;color:#C0C0C0;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-.field input{width:100%;padding:10px 0;border:none;border-bottom:1.5px solid var(--border);font-size:13px;font-family:'Inter',sans-serif;color:#0F0F0F;outline:none;background:transparent;transition:border-color .2s}
-.field input:focus{border-bottom-color:#0F0F0F}
-.field input::placeholder{color:#C8C8C8}
-
-.btn-submit{width:100%;padding:13px;border:none;background:linear-gradient(135deg,#0F0F0F 0%,#2D2D2D 100%);color:#fff;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;margin-top:8px;transition:opacity .15s;position:relative;overflow:hidden}
-.btn-submit::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--varus),#6366F1);opacity:0;transition:opacity .3s}
-.btn-submit:hover:not(:disabled)::after{opacity:1}
-.btn-submit span{position:relative;z-index:1}
-.btn-submit:disabled{opacity:.4;cursor:not-allowed}
-
-.error{font-size:12px;color:var(--red);margin-top:14px;min-height:18px;font-weight:400;text-align:center}
-</style>
+<link rel="stylesheet" href="/static/css/styles.css"/>
 </head>
 <body>
 <div class="card">

@@ -1,8 +1,8 @@
 import asyncio
 import os
 
-from src.atb_api.client import ATBClient
-from src.varus_api.client import VarusClient
+from src.brands.atb.client import AtbClient
+from src.brands.varus.client import VarusClient
 from src.models.adapter_product import Product, from_atb, from_varus
 from src.llm_match import LLMMatcher, MatchedProduct
 
@@ -13,7 +13,7 @@ VARUS_SHOP_ID = 44
 
 async def search_all(
     query: str,
-    atb_client: ATBClient,
+    atb_client: AtbClient,
     varus_client: VarusClient,
     atb_shop,
     varus_shop,
@@ -63,7 +63,7 @@ def display_cart(cart: list[tuple[MatchedProduct, int]]):
 
 
 async def main():
-    atb_client = ATBClient()
+    atb_client = AtbClient()
     varus_client = VarusClient()
     matcher = LLMMatcher()
 

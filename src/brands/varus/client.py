@@ -8,7 +8,7 @@ from curl_cffi import AsyncSession, Response
 from src.config import VARUS_SHOPS_CACHE
 from src.models.products import VarusProduct
 from src.models.shops import VarusShop
-from src.varus_api.headers import MULTISEARCH_HEADERS, REGULAR_HEADERS
+from src.brands.varus.headers import MULTISEARCH_HEADERS, REGULAR_HEADERS
 
 
 class VarusClient:
@@ -39,7 +39,7 @@ class VarusClient:
             VarusShop(
                 id=store["id"],
                 tms_id=store["tms_id"],
-                short_name=store["short_name"],
+                short_name=f"Варус — {store['short_name']}",
                 address=store["address"],
                 lat=float(store["lat"]),
                 lon=float(store["long"]),
@@ -51,10 +51,6 @@ class VarusClient:
     async def get_stores(self):
         if not self.stores:
             self.stores = await self._fetch_stores()
-            VARUS_SHOPS_CACHE.write_text(
-                json.dumps([asdict(s) for s in self.stores], indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
         return self.stores
     
     async def search_product_ids(self, shop: VarusShop, query: str) -> list[str]:

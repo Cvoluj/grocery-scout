@@ -7,10 +7,10 @@ import random
 
 from curl_cffi import AsyncSession, Response
 
-from src.atb_api.headers import GETSTORE_HEADERS, MULTISEARCH_HEADERS
+from src.brands.atb.headers import GETSTORE_HEADERS, MULTISEARCH_HEADERS
 from src.models.products import ATBProduct
 from src.models.shops import ATBShop
-from src.config import ATB_SHOPS_CACHE, BROWSER_TYPES_CYCLE
+from src.settings import BROWSER_TYPES_CYCLE
 
 _OPTION_RE = re.compile(
     r"<option value='(\d+)' worktime='([^']+)' city='\d+'>([^<]+)</option>"
@@ -33,7 +33,7 @@ def _parse_shops(data: dict) -> list[ATBShop]:
         lat, lon = coord_map[shop_id]
         shops.append(ATBShop(
             id=shop_id,
-            short_name=_strip_prefix(address),
+            short_name=f"АТБ — {_strip_prefix(address)}",
             lat=lat,
             lon=lon,
             address=address,
@@ -68,7 +68,7 @@ def _parse_products(data: dict) -> list[ATBProduct]:
 def _gen_q() -> str:
     return random.randint(0, 36**6).to_bytes(4, "big").hex()[:6]
 
-class ATBClient:
+class AtbClient:
     ATB_MULTISEARCH_ID = "11280"
     ATB_API_KEY = "63a6d0a760fd2d0562c4061b78e64754"
     ATB_CITY_ID = "395"
@@ -89,13 +89,9 @@ class ATBClient:
         )
         return _parse_shops(response.json())
 
-    async def get_stores(self) -> list[ATBShop]:
+    async def get_stores(self):
         if not self.stores:
             self.stores = await self._fetch_stores()
-            ATB_SHOPS_CACHE.write_text(
-                json.dumps([asdict(s) for s in self.stores], indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
         return self.stores
 
     async def search_in_shop(self, shop: ATBShop, query: str) -> list[ATBProduct]:
@@ -125,7 +121,7 @@ if __name__ == "__main__":
     import asyncio
 
     async def main():
-        client = ATBClient()
+        client = AtbClient()
         shops = await client.get_stores()
         print(f"Знайдено магазинів: {len(shops)}")
 

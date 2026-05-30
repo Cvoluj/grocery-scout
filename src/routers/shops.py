@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse
 
 from src.auth.deps import get_current_user, require_page_auth
+from src.brands import registry
 from src.settings import BASE_DIR
-from src.store_data import atb_shops, varus_shops
 
 router = APIRouter()
 
@@ -26,6 +26,8 @@ def checkout(_: None = Depends(require_page_auth)):
 
 @router.get("/api/shops")
 def get_shops(_: asyncpg.Record = Depends(get_current_user)):
-    atb = [{**s, "brand": "atb"} for s in atb_shops]
-    varus = [{**s, "brand": "varus"} for s in varus_shops]
-    return atb + varus
+    return [
+        {**shop, "brand": brand}
+        for brand in registry.enabled_brands
+        for shop in registry.shops_for(brand)
+    ]

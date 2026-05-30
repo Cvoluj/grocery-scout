@@ -2,26 +2,28 @@ import asyncio
 
 import asyncpg
 from curl_cffi import AsyncSession
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from libs.pb_client import runtime
+from src.brands import registry
 from src.auth.deps import get_current_user
 from src.schemas.search import MatchRequest, SearchRequest
-from src.store_data import atb_by_id, varus_by_id
-from src.tasks import search_atb_task, search_varus_task
 
 router = APIRouter(prefix="/api")
 
 
 @router.post("/search")
 async def search(req: SearchRequest, _: asyncpg.Record = Depends(get_current_user)):
-    atb = [atb_by_id[s.id] for s in req.shops if s.brand == "atb" and s.id in atb_by_id]
-    varus = [varus_by_id[s.id] for s in req.shops if s.brand == "varus" and s.id in varus_by_id]
+    grouped = registry.resolve_shops(req.shops)
 
-    jobs = await asyncio.gather(
-        *[search_atb_task.kiq(shop, req.query) for shop in atb],
-        *[search_varus_task.kiq(shop, req.query) for shop in varus],
-    )
+    if not grouped:
+        raise HTTPException(status_code=422, detail="No enabled shops matched the request")
+
+    jobs = await asyncio.gather(*[
+        registry.get_task(brand).kiq(shop, req.query)
+        for brand, shops in grouped.items()
+        for shop in shops
+    ])
     results = await asyncio.gather(*[job.wait_result(timeout=30) for job in jobs])
     return [r.return_value for r in results]
 

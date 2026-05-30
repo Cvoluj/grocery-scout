@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from src.brands import registry
 from libs.pb_client import start_pb
 from src import db
 from src.auth.router import router as auth_router
@@ -15,6 +16,8 @@ from src.settings import BASE_DIR
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await start_pb()
+    registry.load()
+    await registry.sync_all_shops()
     await db.setup_pool()
     await broker.startup()
     yield
