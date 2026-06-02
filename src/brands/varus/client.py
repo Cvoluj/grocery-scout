@@ -1,11 +1,7 @@
-
-
-from dataclasses import asdict
 import json
 
 from curl_cffi import AsyncSession, Response
 
-from src.config import VARUS_SHOPS_CACHE
 from src.models.products import VarusProduct
 from src.models.shops import VarusShop
 from src.brands.varus.headers import MULTISEARCH_HEADERS, REGULAR_HEADERS
